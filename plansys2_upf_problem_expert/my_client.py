@@ -184,24 +184,97 @@ class MinimalClientAsync(Node):
         return response
 
 
-    def getProblemInstance(self):
-        pass
+    def getProblemInstance(self, instance):
+        request = srv.GetProblemInstanceDetails.Request()
+        request.instance = instance
+
+        while not self.get_problem_instance_details_client.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('service not available, waiting again...')
+        future = self.get_problem_instance_details_client.call_async(request)
+        rclpy.spin_until_future_complete(self, future)
+        response = future.result()
+        
+        while not self.get_problem_instance_details_client_cpp.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('service not available, waiting again...')
+        future = self.get_problem_instance_details_client_cpp.call_async(request)
+        rclpy.spin_until_future_complete(self, future)
+        response_cpp = future.result()
+
+        if response != response_cpp:
+            print("========================================")
+            print(response)
+            print("========================================")
+            print(response_cpp)
+            print("========================================")
+            print("error getProblemInstance")
+        else:
+            print(response)
+
+        return response
 
     def getProblemInstances(self):
-        pass
+        request = srv.GetProblemInstances.Request()
 
-    def getProblemPredicate(self):
-        pass
+        while not self.get_problem_instances_client.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('service not available, waiting again...')
+        future = self.get_problem_instances_client.call_async(request)
+        rclpy.spin_until_future_complete(self, future)
+        response = future.result()
+        
+        while not self.get_problem_instances_client_cpp.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('service not available, waiting again...')
+        future = self.get_problem_instances_client_cpp.call_async(request)
+        rclpy.spin_until_future_complete(self, future)
+        response_cpp = future.result()
+
+        if response != response_cpp:
+            print("========================================")
+            print(response)
+            print("========================================")
+            print(response_cpp)
+            print("========================================")
+            print("error getProblemInstances")
+        else:
+            print(response)
+
+        return response
+
+    def getProblemPredicate(self, predicate: str):
+        request = srv.GetNodeDetails.Request()
+        request.expression = predicate
+
+        while not self.get_problem_predicate_details_client.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('service not available, waiting again...')
+        future = self.get_problem_predicate_details_client.call_async(request)
+        rclpy.spin_until_future_complete(self, future)
+        response = future.result()
+        
+        while not self.get_problem_predicate_details_client_cpp.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('service not available, waiting again...')
+        future = self.get_problem_predicate_details_client_cpp.call_async(request)
+        rclpy.spin_until_future_complete(self, future)
+        response_cpp = future.result()
+
+        if response != response_cpp:
+            print("========================================")
+            print(response)
+            print("========================================")
+            print(response_cpp)
+            print("========================================")
+            print("error getProblemPredicate")
+        else:
+            print(response)
+
+        return response
 
     def getProblemPredicates(self):
         request = srv.GetStates.Request()
 
-        # while not self.get_problem_predicates_client.wait_for_service(timeout_sec=1.0):
-        #     self.get_logger().info('service not available, waiting again...')
-        # future = self.get_problem_predicates_client.call_async(request)
-        # rclpy.spin_until_future_complete(self, future)
-        # response = future.result()
-        response = None
+        while not self.get_problem_predicates_client.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('service not available, waiting again...')
+        future = self.get_problem_predicates_client.call_async(request)
+        rclpy.spin_until_future_complete(self, future)
+        response = future.result()
         
         while not self.get_problem_predicates_client_cpp.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('service not available, waiting again...')
@@ -221,11 +294,37 @@ class MinimalClientAsync(Node):
 
         return response
 
-    def getProblemFunction(self):
+    def getProblemFunction(self): # TODO
         pass
 
-    def getProblemFunctions(self):
-        pass
+    def getProblemFunctions(self): # TODO: how are functions initialized in PDDL? 
+        request = srv.GetStates.Request()
+
+        # while not self.get_problem_functions_client.wait_for_service(timeout_sec=1.0):
+        #     self.get_logger().info('service not available, waiting again...')
+        # future = self.get_problem_functions_client.call_async(request)
+        # rclpy.spin_until_future_complete(self, future)
+        # response = future.result()
+        response = None
+        
+        while not self.get_problem_functions_client_cpp.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('service not available, waiting again...')
+        future = self.get_problem_functions_client_cpp.call_async(request)
+        rclpy.spin_until_future_complete(self, future)
+        response_cpp = future.result()
+
+        if response != response_cpp:
+            print("========================================")
+            print(response)
+            print("========================================")
+            print(response_cpp)
+            print("========================================")
+            print("error getProblemFunctions")
+        else:
+            print(response)
+
+        return response
+
 
     def getProblem(self):
         request = srv.GetProblem.Request()
@@ -294,7 +393,11 @@ def main():
     minimal_client.addProblem(problem_str)
     # minimal_client.getProblemGoal()
     # minimal_client.getProblem()
-    minimal_client.getProblemPredicates()
+    # minimal_client.getProblemPredicates()
+    # minimal_client.getProblemFunctions()
+    # minimal_client.getProblemPredicate("(robot_at leia kitchen)")
+    # minimal_client.getProblemInstances()
+    minimal_client.getProblemInstance("jack")
 
     minimal_client.destroy_node()
     rclpy.shutdown()

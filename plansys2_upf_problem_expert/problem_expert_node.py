@@ -173,16 +173,62 @@ class ProblemExpertNode(Node):
         return response
 
     def get_problem_instance_service_callback(self, request, response):
-        pass
+        self.get_logger().info(f'get_problem_instance::Incoming request: {request}')
+
+        if self.problem_expert is None:
+            self.get_logger().error("Requesting service in non-active state")
+            response.error_info = "Requesting service in non-active state"
+            response.success = False
+        else:
+            instance = self.problem_expert.getProblemInstance(request.instance)
+            if instance is None:
+                response.error_info = "Instance not found"
+                response.success = False
+            else:
+                response.instance = instance
+                response.success = True
+        return response
 
     def get_problem_instances_service_callback(self, request, response):
-        pass
+        self.get_logger().info(f'get_problem_instances::Incoming request: {request}')
+
+        if self.problem_expert is None:
+            self.get_logger().error("Requesting service in non-active state")
+            response.error_info = "Requesting service in non-active state"
+            response.success = False
+        else:
+            response.instances = self.problem_expert.getProblemInstances()
+            response.success = True
+        return response
 
     def get_problem_predicate_service_callback(self, request, response):
-        pass
+        self.get_logger().info(f'get_problem_predicate::Incoming request: {request}')
+
+        if self.problem_expert is None:
+            self.get_logger().error("Requesting service in non-active state")
+            response.error_info = "Requesting service in non-active state"
+            response.success = False
+        else:
+            predicate_msg = self.problem_expert.getProblemPredicate(request.expression)
+            if predicate_msg is None:
+                response.error_info = "Predicate not found"
+                response.success = False
+            else:
+                response.node = predicate_msg
+                response.success = True
+        return response
 
     def get_problem_predicates_service_callback(self, request, response):
-        pass
+        self.get_logger().info(f'get_problem_predicates::Incoming request: {request}')
+
+        if self.problem_expert is None:
+            self.get_logger().error("Requesting service in non-active state")
+            response.error_info = "Requesting service in non-active state"
+            response.success = False
+        else:
+            response.states = self.problem_expert.getProblemPredicates()
+            response.success = True
+        return response
 
     def get_problem_function_service_callback(self, request, response):
         pass

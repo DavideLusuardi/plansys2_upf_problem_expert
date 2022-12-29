@@ -61,11 +61,36 @@ domain = reader.parse_problem(
 #         print(type)
 
 
-at_start = timing.TimeInterval(timing.TimepointKind.START, timing.TimepointKind.GLOBAL_END, is_right_open=True)
-print(at_start)
-print(list(domain.durative_actions)[0].effects)
-for time, effects in list(domain.durative_actions)[0].effects.items():
-    print(time == timing.StartTiming())
-    print(time)
-    print(effects)
-    print(effects[0].condition)
+# at_start = timing.TimeInterval(timing.TimepointKind.START, timing.TimepointKind.GLOBAL_END, is_right_open=True)
+# print(at_start)
+# print(list(domain.durative_actions)[0].effects)
+# for time, effects in list(domain.durative_actions)[0].effects.items():
+#     print(time == timing.StartTiming())
+#     print(time)
+#     print(effects)
+#     print(effects[0].condition)
+
+
+problem = PDDLReader().parse_problem("/home/davide/plansys2_ws/src/ros2_planning_system/plansys2_domain_expert/test/pddl/domain_simple.pddl", "/home/davide/plansys2_ws/src/ros2_planning_system/plansys2_domain_expert/test/pddl/problem_simple_1.pddl")
+# print(problem.explicit_initial_values)
+# for pred in problem.explicit_initial_values:
+#     print(pred)
+#     print(pred.args)
+#     print([a.object().name for a in pred.args])
+#     print(pred.fluent())
+#     print(type(pred))
+#     print(pred.is_fluent_exp())
+#     print(pred.fluent().type.is_bool_type())
+
+
+
+# import re
+# predicate_str = "(robot_at )"
+# match = re.match(r"^\s*\(\s*([\w-]+)([\s\w-]*)\)\s*$", predicate_str)
+# print(match)
+# print(match.group(0))
+# print(match.group(1))
+# params_name = [arg.strip() for arg in match.group(2).split()]
+# print(params_name)
+
+print(problem.all_objects)

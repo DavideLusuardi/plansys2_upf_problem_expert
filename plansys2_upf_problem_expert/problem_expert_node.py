@@ -10,60 +10,60 @@ from rclpy.node import Node
 class ProblemExpertNode(Node):
 
     def __init__(self):
-        super().__init__('problem_expert')
+        super().__init__('problem_expert_upf')
 
         self.problem_expert = None
         self.state = State.PRIMARY_STATE_UNCONFIGURED
         self.declare_parameter("model_file", "")
 
-        self.create_service(GetState, 'problem_expert/get_state',
+        self.create_service(GetState, 'problem_expert_upf/get_state',
                             self.get_state_service_callback)
-        self.create_service(ChangeState, 'problem_expert/change_state',
+        self.create_service(ChangeState, 'problem_expert_upf/change_state',
                             self.change_state_service_callback)
 
-        self.create_service(srv.AddProblem, 'problem_expert/add_problem',
+        self.create_service(srv.AddProblem, 'problem_expert_upf/add_problem',
                             self.add_problem_service_callback)
-        self.create_service(srv.AddProblemGoal, 'problem_expert/add_problem_goal',
+        self.create_service(srv.AddProblemGoal, 'problem_expert_upf/add_problem_goal',
                             self.add_problem_goal_service_callback)
-        self.create_service(srv.AffectParam, 'problem_expert/add_problem_instance',
+        self.create_service(srv.AffectParam, 'problem_expert_upf/add_problem_instance',
                             self.add_problem_instance_service_callback)
-        self.create_service(srv.AffectNode, 'problem_expert/add_problem_predicate',
+        self.create_service(srv.AffectNode, 'problem_expert_upf/add_problem_predicate',
                             self.add_problem_predicate_service_callback)
-        self.create_service(srv.AffectNode, 'problem_expert/add_problem_function',
+        self.create_service(srv.AffectNode, 'problem_expert_upf/add_problem_function',
                             self.add_problem_function_service_callback)
-        self.create_service(srv.GetProblemGoal, 'problem_expert/get_problem_goal',
+        self.create_service(srv.GetProblemGoal, 'problem_expert_upf/get_problem_goal',
                             self.get_problem_goal_service_callback)
-        self.create_service(srv.GetProblemInstanceDetails, 'problem_expert/get_problem_instance', 
+        self.create_service(srv.GetProblemInstanceDetails, 'problem_expert_upf/get_problem_instance', 
                             self.get_problem_instance_service_callback)
-        self.create_service(srv.GetProblemInstances, 'problem_expert/get_problem_instances',
+        self.create_service(srv.GetProblemInstances, 'problem_expert_upf/get_problem_instances',
                             self.get_problem_instances_service_callback)
-        self.create_service(srv.GetNodeDetails, 'problem_expert/get_problem_predicate',
+        self.create_service(srv.GetNodeDetails, 'problem_expert_upf/get_problem_predicate',
                             self.get_problem_predicate_service_callback)
-        self.create_service(srv.GetStates, 'problem_expert/get_problem_predicates',
+        self.create_service(srv.GetStates, 'problem_expert_upf/get_problem_predicates',
                             self.get_problem_predicates_service_callback)
-        self.create_service(srv.GetNodeDetails, 'problem_expert/get_problem_function',
+        self.create_service(srv.GetNodeDetails, 'problem_expert_upf/get_problem_function',
                             self.get_problem_function_service_callback)
-        self.create_service(srv.GetStates, 'problem_expert/get_problem_functions',
+        self.create_service(srv.GetStates, 'problem_expert_upf/get_problem_functions',
                             self.get_problem_functions_service_callback)
-        self.create_service(srv.GetProblem, 'problem_expert/get_problem', 
+        self.create_service(srv.GetProblem, 'problem_expert_upf/get_problem', 
                             self.get_problem_service_callback)
-        self.create_service(srv.RemoveProblemGoal, 'problem_expert/remove_problem_goal',
+        self.create_service(srv.RemoveProblemGoal, 'problem_expert_upf/remove_problem_goal',
                             self.remove_problem_goal_service_callback)
-        self.create_service(srv.ClearProblemKnowledge, 'problem_expert/clear_problem_knowledge',
+        self.create_service(srv.ClearProblemKnowledge, 'problem_expert_upf/clear_problem_knowledge',
                             self.clear_problem_knowledge_service_callback)
-        self.create_service(srv.AffectParam, 'problem_expert/remove_problem_instance',
+        self.create_service(srv.AffectParam, 'problem_expert_upf/remove_problem_instance',
                             self.remove_problem_instance_service_callback)
-        self.create_service(srv.AffectNode, 'problem_expert/remove_problem_predicate',
+        self.create_service(srv.AffectNode, 'problem_expert_upf/remove_problem_predicate',
                             self.remove_problem_predicate_service_callback)
-        self.create_service(srv.AffectNode, 'problem_expert/remove_problem_function',
+        self.create_service(srv.AffectNode, 'problem_expert_upf/remove_problem_function',
                             self.remove_problem_function_service_callback)
-        self.create_service(srv.ExistNode, 'problem_expert/exist_problem_predicate',
+        self.create_service(srv.ExistNode, 'problem_expert_upf/exist_problem_predicate',
                             self.exist_problem_predicate_service_callback)
-        self.create_service(srv.ExistNode, 'problem_expert/exist_problem_function',
+        self.create_service(srv.ExistNode, 'problem_expert_upf/exist_problem_function',
                             self.exist_problem_function_service_callback)
-        self.create_service(srv.AffectNode, 'problem_expert/update_problem_function',
+        self.create_service(srv.AffectNode, 'problem_expert_upf/update_problem_function',
                             self.update_problem_function_service_callback)
-        self.create_service(srv.IsProblemGoalSatisfied, 'problem_expert/is_problem_goal_satisfied',
+        self.create_service(srv.IsProblemGoalSatisfied, 'problem_expert_upf/is_problem_goal_satisfied',
                             self.is_problem_goal_satisfied_service_callback)
 
     def get_state_service_callback(self, request, response):
@@ -154,6 +154,15 @@ class ProblemExpertNode(Node):
     def add_problem_instance_service_callback(self, request, response):
         self.get_logger().info(f'add_problem_instance::Incoming request: {request}')
 
+        if self.problem_expert is None:
+            self.get_logger().error("Requesting service in non-active state")
+            response.error_info = "Requesting service in non-active state"
+            response.success = False
+        else:
+            response.success = self.problem_expert.addProblemInstance(request.param)
+
+        return response
+
     def add_problem_predicate_service_callback(self, request, response):
         self.get_logger().info(f'add_problem_predicate::Incoming request: {request}')
 
@@ -232,9 +241,32 @@ class ProblemExpertNode(Node):
 
     def get_problem_function_service_callback(self, request, response):
         self.get_logger().info(f'get_problem_function::Incoming request: {request}')
+        
+        if self.problem_expert is None:
+            self.get_logger().error("Requesting service in non-active state")
+            response.error_info = "Requesting service in non-active state"
+            response.success = False
+        else:
+            function = self.problem_expert.getProblemFunction(request.expression)
+            if function is None:
+                response.error_info = "Function not found"
+                response.success = False
+            else:
+                response.node = function
+                response.success = True
+        return response
 
     def get_problem_functions_service_callback(self, request, response):
         self.get_logger().info(f'get_problem_functions::Incoming request: {request}')
+        
+        if self.problem_expert is None:
+            self.get_logger().error("Requesting service in non-active state")
+            response.error_info = "Requesting service in non-active state"
+            response.success = False
+        else:
+            response.states = self.problem_expert.getProblemFunctions()
+            response.success = True
+        return response
 
     def get_problem_service_callback(self, request, response):
         self.get_logger().info(f'get_problem::Incoming request: {request}')
@@ -265,6 +297,14 @@ class ProblemExpertNode(Node):
 
     def exist_problem_predicate_service_callback(self, request, response):
         self.get_logger().info(f'exist_problem_predicate::Incoming request: {request}')
+
+        if self.problem_expert is None:
+            self.get_logger().error("Requesting service in non-active state")
+            response.error_info = "Requesting service in non-active state"
+            response.success = False
+        else:
+            response.exist = self.problem_expert.existProblemPredicate(request.node)
+        return response
 
     def exist_problem_function_service_callback(self, request, response):
         self.get_logger().info(f'exist_problem_function::Incoming request: {request}')

@@ -71,7 +71,7 @@ domain = reader.parse_problem(
 #     print(effects[0].condition)
 
 
-problem = PDDLReader().parse_problem("/home/davide/plansys2_ws/src/ros2_planning_system/plansys2_domain_expert/test/pddl/domain_simple.pddl", "/home/davide/plansys2_ws/src/ros2_planning_system/plansys2_domain_expert/test/pddl/problem_simple_1.pddl")
+problem = PDDLReader().parse_problem("/home/davide/plansys2_ws/src/ros2_planning_system/plansys2_problem_expert/test/pddl/domain_simple.pddl", "/home/davide/plansys2_ws/src/ros2_planning_system/plansys2_problem_expert/test/pddl/problem_simple_1.pddl")
 # print(problem.explicit_initial_values)
 # for pred in problem.explicit_initial_values:
 #     print(pred)
@@ -93,4 +93,10 @@ problem = PDDLReader().parse_problem("/home/davide/plansys2_ws/src/ros2_planning
 # params_name = [arg.strip() for arg in match.group(2).split()]
 # print(params_name)
 
-print(problem.all_objects)
+# print(problem.explicit_initial_values)
+for fnode, value in problem.explicit_initial_values.items():
+    # print(fnode)
+    # print(fnode.is_fluent_exp())
+    # print(fnode.fluent().type)
+    # print(fnode, value)
+    print(float(value.constant_value()))

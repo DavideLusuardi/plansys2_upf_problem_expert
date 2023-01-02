@@ -1,4 +1,4 @@
-from plansys2_msgs import srv
+from plansys2_msgs import srv, msg
 from lifecycle_msgs.srv import GetState, ChangeState
 from lifecycle_msgs.msg import Transition
 import rclpy
@@ -147,8 +147,35 @@ class MinimalClientAsync(Node):
     def addProblemGoal(self):
         pass
 
-    def addProblemInstance(self):
-        pass
+    def addProblemInstance(self, name: str, type: str):
+        request = srv.AffectParam.Request()
+        request.param = msg.Param()
+        request.param.name = name
+        request.param.type = type
+
+        while not self.add_problem_instance_client.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('service not available, waiting again...')
+        future = self.add_problem_instance_client.call_async(request)
+        rclpy.spin_until_future_complete(self, future)
+        response = future.result()
+        
+        while not self.add_problem_instance_client_cpp.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('service not available, waiting again...')
+        future = self.add_problem_instance_client_cpp.call_async(request)
+        rclpy.spin_until_future_complete(self, future)
+        response_cpp = future.result()
+
+        if response != response_cpp:
+            print("========================================")
+            print(response)
+            print("========================================")
+            print(response_cpp)
+            print("========================================")
+            print("error addProblemInstance")
+        else:
+            print(response)
+
+        return response
 
     def addProblemPredicate(self):
         pass
@@ -220,7 +247,7 @@ class MinimalClientAsync(Node):
         future = self.get_problem_instances_client.call_async(request)
         rclpy.spin_until_future_complete(self, future)
         response = future.result()
-        
+
         while not self.get_problem_instances_client_cpp.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('service not available, waiting again...')
         future = self.get_problem_instances_client_cpp.call_async(request)
@@ -294,18 +321,42 @@ class MinimalClientAsync(Node):
 
         return response
 
-    def getProblemFunction(self): # TODO
-        pass
+    def getProblemFunction(self, function: str):
+        request = srv.GetNodeDetails.Request()
+        request.expression = function
 
-    def getProblemFunctions(self): # TODO: how are functions initialized in PDDL? 
+        while not self.get_problem_function_details_client.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('service not available, waiting again...')
+        future = self.get_problem_function_details_client.call_async(request)
+        rclpy.spin_until_future_complete(self, future)
+        response = future.result()
+        
+        while not self.get_problem_function_details_client_cpp.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('service not available, waiting again...')
+        future = self.get_problem_function_details_client_cpp.call_async(request)
+        rclpy.spin_until_future_complete(self, future)
+        response_cpp = future.result()
+
+        if response != response_cpp:
+            print("========================================")
+            print(response)
+            print("========================================")
+            print(response_cpp)
+            print("========================================")
+            print("error getProblemFunction")
+        else:
+            print(response)
+
+        return response
+
+    def getProblemFunctions(self):
         request = srv.GetStates.Request()
 
-        # while not self.get_problem_functions_client.wait_for_service(timeout_sec=1.0):
-        #     self.get_logger().info('service not available, waiting again...')
-        # future = self.get_problem_functions_client.call_async(request)
-        # rclpy.spin_until_future_complete(self, future)
-        # response = future.result()
-        response = None
+        while not self.get_problem_functions_client.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('service not available, waiting again...')
+        future = self.get_problem_functions_client.call_async(request)
+        rclpy.spin_until_future_complete(self, future)
+        response = future.result()
         
         while not self.get_problem_functions_client_cpp.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('service not available, waiting again...')
@@ -369,7 +420,32 @@ class MinimalClientAsync(Node):
         pass
 
     def existProblemPredicate(self):
-        pass
+        request = srv.ExistNode.Request()
+
+        # while not self.exist_problem_predicate_client.wait_for_service(timeout_sec=1.0):
+        #     self.get_logger().info('service not available, waiting again...')
+        # future = self.exist_problem_predicate_client.call_async(request)
+        # rclpy.spin_until_future_complete(self, future)
+        # response = future.result()
+        response = None
+        
+        while not self.exist_problem_predicate_client_cpp.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('service not available, waiting again...')
+        future = self.exist_problem_predicate_client_cpp.call_async(request)
+        rclpy.spin_until_future_complete(self, future)
+        response_cpp = future.result()
+
+        if response != response_cpp:
+            print("========================================")
+            print(response)
+            print("========================================")
+            print(response_cpp)
+            print("========================================")
+            print("error existProblemPredicate")
+        else:
+            print(response)
+
+        return response
 
     def existProblemFunction(self):
         pass
@@ -387,17 +463,21 @@ def main():
 
     minimal_client = MinimalClientAsync()
 
-    with open("/home/davide/plansys2_ws/src/ros2_planning_system/plansys2_domain_expert/test/pddl/problem_simple_1.pddl") as f:
+    with open("/home/davide/plansys2_ws/src/ros2_planning_system/plansys2_problem_expert/test/pddl/problem_simple_1.pddl") as f:
         problem_str = ''.join(f.readlines())
 
     minimal_client.addProblem(problem_str)
     # minimal_client.getProblemGoal()
     # minimal_client.getProblem()
-    minimal_client.getProblemPredicates()
-    minimal_client.getProblemFunctions()
+    # minimal_client.getProblemPredicates()
+    # minimal_client.getProblemFunctions()
+    # minimal_client.getProblemFunction("(room_distance kitchen bedroom)")
     # minimal_client.getProblemPredicate("(robot_at leia kitchen)")
     # minimal_client.getProblemInstances()
     # minimal_client.getProblemInstance("jack")
+    # minimal_client.existProblemPredicate()
+    # minimal_client.addProblemInstance("my_object", "robot")
+    # minimal_client.getProblemInstances()
 
     minimal_client.destroy_node()
     rclpy.shutdown()

@@ -145,7 +145,33 @@ class MinimalClientAsync(Node):
         return response
 
     def addProblemGoal(self):
-        pass
+        request = srv.AffectParam.Request()
+        request.param = msg.Param()
+        request.tree = msg.Tree() # TODO
+
+        while not self.add_problem_goal_client.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('service not available, waiting again...')
+        future = self.add_problem_goal_client.call_async(request)
+        rclpy.spin_until_future_complete(self, future)
+        response = future.result()
+        
+        while not self.add_problem_goal_client_cpp.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('service not available, waiting again...')
+        future = self.add_problem_goal_client_cpp.call_async(request)
+        rclpy.spin_until_future_complete(self, future)
+        response_cpp = future.result()
+
+        if response != response_cpp:
+            print("========================================")
+            print(response)
+            print("========================================")
+            print(response_cpp)
+            print("========================================")
+            print("error addProblemGoal")
+        else:
+            print(response)
+
+        return response
 
     def addProblemInstance(self, name: str, type: str):
         request = srv.AffectParam.Request()

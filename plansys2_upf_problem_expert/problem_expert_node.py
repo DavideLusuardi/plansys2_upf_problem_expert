@@ -151,6 +151,15 @@ class ProblemExpertNode(Node):
     def add_problem_goal_service_callback(self, request, response):
         self.get_logger().info(f'add_problem_goal::Incoming request: {request}')
 
+        if self.problem_expert is None:
+            self.get_logger().error("Requesting service in non-active state")
+            response.error_info = "Requesting service in non-active state"
+            response.success = False
+        else:
+            response.success = self.problem_expert.addProblemGoal(request.tree)
+
+        return response
+
     def add_problem_instance_service_callback(self, request, response):
         self.get_logger().info(f'add_problem_instance::Incoming request: {request}')
 

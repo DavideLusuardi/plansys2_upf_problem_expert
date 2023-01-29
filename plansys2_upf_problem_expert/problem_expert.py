@@ -2,10 +2,8 @@ from plansys2_msgs import msg
 
 import unified_planning as up
 from unified_planning.io import PDDLReader
-from unified_planning.model.action import InstantaneousAction
 from unified_planning.model.operators import OperatorKind
-from unified_planning.model.effect import EffectKind
-from unified_planning.model import timing
+from unified_planning.exceptions import UPValueError
 
 from plansys2_upf_domain_expert import DomainExpert
 
@@ -56,25 +54,40 @@ class ProblemExpert():
         problem = self.parseProblem(problem_str)
         return problem is not None
 
-    def addProblemGoal(self):
-        pass
+    def addProblemGoal(self, tree: msg.Tree):
+        if self.problem is None:
+            return False
+
+        self.problem.add_goal(self.domain_expert.constructFNode(tree))
 
     def addProblemInstance(self, instance: msg.Param):
         if self.problem is None:
             return False
-
-        type = None
-        for t in self.domain_expert.domain.user_types: # TODO: support non-user types
-            if t.name == instance.type:
-                type = t
-        if type is None:
+        
+        try:
+            type = self.problem.user_type(instance.type)
+        except UPValueError:
             return False
 
         self.problem.add_object(up.model.Object(instance.name, type, self.problem.env))
         return True
 
-    def addProblemPredicate(self):
-        pass
+    def addProblemPredicate(self, node: msg.Node):
+        if self.problem is None:
+            return False
+
+        parameters = list()
+        for p in node.parameters:
+            try:
+                type = self.problem.user_type(p.type)
+            except UPValueError:
+                return False
+            parameters.append(up.model.parameter.Parameter(p.name, type, self.problem.env))
+
+        predicate = up.model.Fluent(name=node.name, _signature=parameters, env=self.problem.env)
+        self.problem.set_initial_value(predicate, self.problem.env.expression_manager.TRUE())
+        
+        return True
 
     def addProblemFunction(self):
         pass

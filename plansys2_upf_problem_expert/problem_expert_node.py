@@ -318,6 +318,14 @@ class ProblemExpertNode(Node):
     def exist_problem_function_service_callback(self, request, response):
         self.get_logger().info(f'exist_problem_function::Incoming request: {request}')
 
+        if self.problem_expert is None:
+            self.get_logger().error("Requesting service in non-active state")
+            response.error_info = "Requesting service in non-active state"
+            response.success = False
+        else:
+            response.exist = self.problem_expert.existProblemFunction(request.node)
+        return response
+
     def update_problem_function_service_callback(self, request, response):
         self.get_logger().info(f'update_problem_function::Incoming request: {request}')
 

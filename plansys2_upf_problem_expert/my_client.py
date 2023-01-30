@@ -144,10 +144,11 @@ class MinimalClientAsync(Node):
 
         return response
 
-    def addProblemGoal(self):
+    def addProblemGoal(self, node):
         request = srv.AffectParam.Request()
         request.param = msg.Param()
-        request.tree = msg.Tree() # TODO
+        request.tree = msg.Tree()
+        request.tree.nodes = [node]
 
         while not self.add_problem_goal_client.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('service not available, waiting again...')
@@ -445,15 +446,15 @@ class MinimalClientAsync(Node):
     def removeProblemFunction(self):
         pass
 
-    def existProblemPredicate(self):
+    def existProblemPredicate(self, node: msg.Node):
         request = srv.ExistNode.Request()
+        request.node = node
 
-        # while not self.exist_problem_predicate_client.wait_for_service(timeout_sec=1.0):
-        #     self.get_logger().info('service not available, waiting again...')
-        # future = self.exist_problem_predicate_client.call_async(request)
-        # rclpy.spin_until_future_complete(self, future)
-        # response = future.result()
-        response = None
+        while not self.exist_problem_predicate_client.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('service not available, waiting again...')
+        future = self.exist_problem_predicate_client.call_async(request)
+        rclpy.spin_until_future_complete(self, future)
+        response = future.result()
         
         while not self.exist_problem_predicate_client_cpp.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('service not available, waiting again...')
@@ -473,8 +474,33 @@ class MinimalClientAsync(Node):
 
         return response
 
-    def existProblemFunction(self):
-        pass
+    def existProblemFunction(self, node: msg.Node):
+        request = srv.ExistNode.Request()
+        request.node = node
+
+        while not self.exist_problem_function_client.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('service not available, waiting again...')
+        future = self.exist_problem_function_client.call_async(request)
+        rclpy.spin_until_future_complete(self, future)
+        response = future.result()
+        
+        while not self.exist_problem_function_client_cpp.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('service not available, waiting again...')
+        future = self.exist_problem_function_client_cpp.call_async(request)
+        rclpy.spin_until_future_complete(self, future)
+        response_cpp = future.result()
+
+        if response != response_cpp:
+            print("========================================")
+            print(response)
+            print("========================================")
+            print(response_cpp)
+            print("========================================")
+            print("error existProblemFunction")
+        else:
+            print(response)
+
+        return response
 
     def updateProblemFunction(self):
         pass
@@ -489,11 +515,11 @@ def main():
 
     minimal_client = MinimalClientAsync()
 
-    with open("/home/davide/plansys2_ws/src/ros2_planning_system/plansys2_problem_expert/test/pddl/problem_simple_1.pddl") as f:
+    with open("planning/plansys2_ws/src/plansys2_upf_problem_expert/tmp/problem_simple_1.pddl") as f:
         problem_str = ''.join(f.readlines())
 
     minimal_client.addProblem(problem_str)
-    # minimal_client.getProblemGoal()
+    minimal_client.getProblemGoal()
     # minimal_client.getProblem()
     # minimal_client.getProblemPredicates()
     # minimal_client.getProblemFunctions()
@@ -501,9 +527,39 @@ def main():
     # minimal_client.getProblemPredicate("(robot_at leia kitchen)")
     # minimal_client.getProblemInstances()
     # minimal_client.getProblemInstance("jack")
-    # minimal_client.existProblemPredicate()
+
+    # node = msg.Node()
+    # node.node_type = msg.Node.PREDICATE
+    # node.name = "robot_at"
+    # node.parameters.append(msg.Param())
+    # node.parameters[-1].name = "leia"
+    # node.parameters.append(msg.Param())
+    # node.parameters[-1].name = "kitchen"
+    # minimal_client.existProblemPredicate(node)
+
+    # node = msg.Node()
+    # node.node_type = msg.Node.FUNCTION
+    # node.name = "room_distance"
+    # node.parameters.append(msg.Param())
+    # node.parameters[-1].name = "kitchen"
+    # node.parameters.append(msg.Param())
+    # node.parameters[-1].name = "bedroom"
+    # minimal_client.existProblemFunction(node)
+
     # minimal_client.addProblemInstance("my_object", "robot")
     # minimal_client.getProblemInstances()
+
+    node = msg.Node()
+    node.node_type = msg.Node.PREDICATE
+    node.name = "robot_at"
+    node.parameters.append(msg.Param())
+    node.parameters[-1].name = "leia"
+    node.parameters[-1].type = "person"
+    node.parameters.append(msg.Param())
+    node.parameters[-1].name = "kitchen"
+    node.parameters[-1].type = "room"
+    minimal_client.addProblemGoal(node)
+    minimal_client.getProblemGoal()
 
     minimal_client.destroy_node()
     rclpy.shutdown()

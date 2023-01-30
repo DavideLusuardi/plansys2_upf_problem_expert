@@ -58,7 +58,9 @@ class ProblemExpert():
         if self.problem is None:
             return False
 
-        self.problem.add_goal(self.domain_expert.constructFNode(tree))
+        for node in tree.nodes:
+            self.problem.add_goal(self.domain_expert.constructFNode(node)) # TODO
+        return True
 
     def addProblemInstance(self, instance: msg.Param):
         if self.problem is None:
@@ -86,7 +88,8 @@ class ProblemExpert():
 
         predicate = up.model.Fluent(name=node.name, _signature=parameters, env=self.problem.env)
         self.problem.set_initial_value(predicate, self.problem.env.expression_manager.TRUE())
-        
+        # TODO: use add_fluent()?
+
         return True
 
     def addProblemFunction(self):
@@ -96,8 +99,7 @@ class ProblemExpert():
         if self.problem is None:
             return []
         
-        # TODO: to consider timed goals
-        # TODO: add and-node as root
+        # TODO: consider timed goals
         tree = msg.Tree()
         tree.nodes = list()
         and_node = msg.Node()
@@ -255,13 +257,16 @@ class ProblemExpert():
         pass
 
     def existProblemPredicate(self, node: msg.Node):
-        # TODO: params type not considered
+        # params type not considered
         params_str = ' '.join([p.name for p in node.parameters])
         predicate_str = f"({node.name} {params_str})"
         return self.getProblemPredicate(predicate_str) is not None
 
     def existProblemFunction(self, node: msg.Node):
-        return False # TODO
+        # params type not considered
+        params_str = ' '.join([p.name for p in node.parameters])
+        function_str = f"({node.name} {params_str})"
+        return self.getProblemFunction(function_str) is not None
 
     def updateProblemFunction(self):
         pass

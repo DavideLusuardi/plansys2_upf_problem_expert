@@ -145,8 +145,7 @@ class MinimalClientAsync(Node):
         return response
 
     def addProblemGoal(self, node):
-        request = srv.AffectParam.Request()
-        request.param = msg.Param()
+        request = srv.AddProblemGoal.Request()
         request.tree = msg.Tree()
         request.tree.nodes = [node]
 
@@ -204,11 +203,62 @@ class MinimalClientAsync(Node):
 
         return response
 
-    def addProblemPredicate(self):
-        pass
+    def addProblemPredicate(self, node: msg.Node):
+        request = srv.AffectNode.Request()
+        request.node = node
 
-    def addProblemFunction(self):
-        pass
+        # while not self.add_problem_predicate_client.wait_for_service(timeout_sec=1.0):
+        #     self.get_logger().info('service not available, waiting again...')
+        # future = self.add_problem_predicate_client.call_async(request)
+        # rclpy.spin_until_future_complete(self, future)
+        # response = future.result()
+        response = None
+        
+        while not self.add_problem_predicate_client_cpp.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('service not available, waiting again...')
+        future = self.add_problem_predicate_client_cpp.call_async(request)
+        rclpy.spin_until_future_complete(self, future)
+        response_cpp = future.result()
+
+        if response != response_cpp:
+            print("========================================")
+            print(response)
+            print("========================================")
+            print(response_cpp)
+            print("========================================")
+            print("error addProblemPredicate")
+        else:
+            print(response)
+
+        return response
+
+    def addProblemFunction(self, node: msg.Node):
+        request = srv.AffectNode.Request()
+        request.node = node
+
+        while not self.add_problem_function_client.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('service not available, waiting again...')
+        future = self.add_problem_function_client.call_async(request)
+        rclpy.spin_until_future_complete(self, future)
+        response = future.result()
+        
+        while not self.add_problem_function_client_cpp.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('service not available, waiting again...')
+        future = self.add_problem_function_client_cpp.call_async(request)
+        rclpy.spin_until_future_complete(self, future)
+        response_cpp = future.result()
+
+        if response != response_cpp:
+            print("========================================")
+            print(response)
+            print("========================================")
+            print(response_cpp)
+            print("========================================")
+            print("error addProblemFunction")
+        else:
+            print(response)
+
+        return response
 
     def getProblemGoal(self):
         request = srv.GetProblemGoal.Request()
@@ -519,7 +569,7 @@ def main():
         problem_str = ''.join(f.readlines())
 
     minimal_client.addProblem(problem_str)
-    minimal_client.getProblemGoal()
+    # minimal_client.getProblemGoal()
     # minimal_client.getProblem()
     # minimal_client.getProblemPredicates()
     # minimal_client.getProblemFunctions()
@@ -549,17 +599,43 @@ def main():
     # minimal_client.addProblemInstance("my_object", "robot")
     # minimal_client.getProblemInstances()
 
+    # minimal_client.getProblemPredicates()
+    # node = msg.Node()
+    # node.node_type = msg.Node.PREDICATE
+    # node.name = "robot_at"
+    # node.parameters.append(msg.Param())
+    # node.parameters[-1].name = "leia"
+    # # node.parameters[-1].type = "robot"
+    # node.parameters.append(msg.Param())
+    # node.parameters[-1].name = "bedroom"
+    # # node.parameters[-1].type = "room"
+    # minimal_client.addProblemPredicate(node)
+    # minimal_client.getProblemPredicates()
+
+    minimal_client.getProblemFunctions()
     node = msg.Node()
-    node.node_type = msg.Node.PREDICATE
-    node.name = "robot_at"
+    node.node_type = msg.Node.FUNCTION
+    node.name = "room_distance"
     node.parameters.append(msg.Param())
-    node.parameters[-1].name = "leia"
-    node.parameters[-1].type = "person"
-    node.parameters.append(msg.Param())
-    node.parameters[-1].name = "kitchen"
+    node.parameters[-1].name = "r1"
     node.parameters[-1].type = "room"
-    minimal_client.addProblemGoal(node)
-    minimal_client.getProblemGoal()
+    node.parameters.append(msg.Param())
+    node.parameters[-1].name = "r2"
+    node.parameters[-1].type = "room"
+    minimal_client.addProblemFunction(node)
+    minimal_client.getProblemFunctions()
+
+    # node = msg.Node()
+    # node.node_type = msg.Node.PREDICATE
+    # node.name = "robot_at"
+    # node.parameters.append(msg.Param())
+    # node.parameters[-1].name = "leia"
+    # node.parameters[-1].type = "robot"
+    # node.parameters.append(msg.Param())
+    # node.parameters[-1].name = "kitchen"
+    # node.parameters[-1].type = "room"
+    # minimal_client.addProblemGoal(node)
+    # minimal_client.getProblemGoal()
 
     minimal_client.destroy_node()
     rclpy.shutdown()

@@ -175,8 +175,26 @@ class ProblemExpertNode(Node):
     def add_problem_predicate_service_callback(self, request, response):
         self.get_logger().info(f'add_problem_predicate::Incoming request: {request}')
 
+        if self.problem_expert is None:
+            self.get_logger().error("Requesting service in non-active state")
+            response.error_info = "Requesting service in non-active state"
+            response.success = False
+        else:
+            response.success = self.problem_expert.addProblemPredicate(request.node)
+
+        return response
+
     def add_problem_function_service_callback(self, request, response):
         self.get_logger().info(f'add_problem_function::Incoming request: {request}')
+
+        if self.problem_expert is None:
+            self.get_logger().error("Requesting service in non-active state")
+            response.error_info = "Requesting service in non-active state"
+            response.success = False
+        else:
+            response.success = self.problem_expert.addProblemFunction(request.node)
+
+        return response
 
     def get_problem_goal_service_callback(self, request, response):
         self.get_logger().info(f'get_problem_goal::Incoming request: {request}')

@@ -11,6 +11,7 @@ from typing import List, Dict
 import tempfile
 import os
 import re
+from fractions import Fraction
 
 
 class ProblemExpert():
@@ -38,7 +39,7 @@ class ProblemExpert():
             problem_file.write(problem_str)
             domain_file.close()
             problem_file.close()
-            
+
             self.problem = PDDLReader().parse_problem(domain_file.name, problem_file.name)
             self.problem_pddl = problem_str
             return self.problem
@@ -54,14 +55,17 @@ class ProblemExpert():
         problem = self.parseProblem(problem_str)
         return problem is not None
 
+    # TODO: cpp code sobstitute goal
     def addProblemGoal(self, tree: msg.Tree):
         if self.problem is None:
             return False
 
+        nodes = dict([(node.node_id, node) for node in tree.nodes])
         for node in tree.nodes:
-            self.problem.add_goal(self.domain_expert.constructFNode(node)) # TODO
+            self.problem.add_goal(self.domain_expert.constructFNode(nodes, node))
         return True
 
+    # TODO: check if instance already exists 
     def addProblemInstance(self, instance: msg.Param):
         if self.problem is None:
             return False
@@ -74,8 +78,13 @@ class ProblemExpert():
         self.problem.add_object(up.model.Object(instance.name, type, self.problem.env))
         return True
 
+    # TODO: check if predicate already exists, if it is valid
+    # TODO: manage cases where types are not defined
     def addProblemPredicate(self, node: msg.Node):
         if self.problem is None:
+            return False
+
+        if self.existProblemPredicate(node):
             return False
 
         parameters = list()
@@ -84,16 +93,36 @@ class ProblemExpert():
                 type = self.problem.user_type(p.type)
             except UPValueError:
                 return False
-            parameters.append(up.model.parameter.Parameter(p.name, type, self.problem.env))
+            parameters.append(up.model.Object(p.name, type, self.problem.env))
 
-        predicate = up.model.Fluent(name=node.name, _signature=parameters, env=self.problem.env)
-        self.problem.set_initial_value(predicate, self.problem.env.expression_manager.TRUE())
+        fluent = up.model.Fluent(node.name, self.problem.env.type_manager.BoolType(), parameters, self.problem.env)
+        fnode = self.problem.env.expression_manager.FluentExp(fluent, fluent.signature)
+        self.problem.set_initial_value(fnode, self.problem.env.expression_manager.TRUE())
         # TODO: use add_fluent()?
 
         return True
 
-    def addProblemFunction(self):
-        pass
+    def addProblemFunction(self, node):
+        if self.problem is None:
+            return False
+
+        if self.existProblemFunction(node):
+            return False # TODO: update function instead of return false
+
+        parameters = list()
+        for p in node.parameters:
+            try:
+                type = self.problem.user_type(p.type)
+            except UPValueError:
+                return False
+            parameters.append(up.model.Object(p.name, type, self.problem.env))
+        
+        print(f"parameters: {parameters}")
+        fluent = up.model.Fluent(node.name, self.problem.env.type_manager.RealType(), parameters, self.problem.env)
+        fnode = self.problem.env.expression_manager.FluentExp(fluent, fluent.signature)
+        self.problem.set_initial_value(fnode, self.problem.env.expression_manager.Real(Fraction(0))) # TODO
+
+        return True
 
     def getProblemGoal(self):
         if self.problem is None:

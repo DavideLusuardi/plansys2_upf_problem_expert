@@ -3,7 +3,7 @@
   (:objects
     leia - robot
     Jack - person
-    kitchen bedroom - room
+    kitchen bedroom r1 r2 - room
     m1 - message
   )
   (:init

@@ -8,7 +8,7 @@ from unified_planning.model import timing
 
 reader = PDDLReader()
 domain = reader.parse_problem(
-    '/home/davide/plansys2_ws/src/plansys2_upf_problem_expert/tmp/domain2.pddl', None)
+    '/home/davide/planning/plansys2_ws/src/plansys2_upf_problem_expert/tmp/domain2.pddl', None)
 
 # print(domain.name)
 # print(domain.user_types[0].name)
@@ -71,7 +71,7 @@ domain = reader.parse_problem(
 #     print(effects[0].condition)
 
 
-problem = PDDLReader().parse_problem("/home/davide/plansys2_ws/src/ros2_planning_system/plansys2_problem_expert/test/pddl/domain_simple.pddl", "/home/davide/plansys2_ws/src/ros2_planning_system/plansys2_problem_expert/test/pddl/problem_simple_1.pddl")
+problem = PDDLReader().parse_problem("/home/davide/planning/plansys2_ws/src/ros2_planning_system/plansys2_problem_expert/test/pddl/domain_simple.pddl", "/home/davide/planning/plansys2_ws/src/ros2_planning_system/plansys2_problem_expert/test/pddl/problem_simple_1.pddl")
 # print(problem.explicit_initial_values)
 # for pred in problem.explicit_initial_values:
 #     print(pred)
@@ -94,9 +94,14 @@ problem = PDDLReader().parse_problem("/home/davide/plansys2_ws/src/ros2_planning
 # print(params_name)
 
 # print(problem.explicit_initial_values)
-for fnode, value in problem.explicit_initial_values.items():
+# for fnode, value in problem.explicit_initial_values.items():
     # print(fnode)
     # print(fnode.is_fluent_exp())
     # print(fnode.fluent().type)
     # print(fnode, value)
-    print(float(value.constant_value()))
+    # print(float(value.constant_value()))
+
+# goal = problem.goals[0]
+# print(goal)
+# print([a.object().type for a in goal.args])
+

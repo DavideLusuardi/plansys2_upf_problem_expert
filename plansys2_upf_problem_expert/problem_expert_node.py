@@ -245,7 +245,7 @@ class ProblemExpertNode(Node):
             response.error_info = "Requesting service in non-active state"
             response.success = False
         else:
-            predicate_msg = self.problem_expert.getProblemPredicate(request.expression)
+            predicate, predicate_msg = self.problem_expert.getProblemPredicate(request.expression)
             if predicate_msg is None:
                 response.error_info = "Predicate not found"
                 response.success = False
@@ -274,12 +274,12 @@ class ProblemExpertNode(Node):
             response.error_info = "Requesting service in non-active state"
             response.success = False
         else:
-            function = self.problem_expert.getProblemFunction(request.expression)
-            if function is None:
+            function, function_msg = self.problem_expert.getProblemFunction(request.expression)
+            if function_msg is None:
                 response.error_info = "Function not found"
                 response.success = False
             else:
-                response.node = function
+                response.node = function_msg
                 response.success = True
         return response
 
@@ -309,6 +309,14 @@ class ProblemExpertNode(Node):
 
     def remove_problem_goal_service_callback(self, request, response):
         self.get_logger().info(f'remove_problem_goal::Incoming request: {request}')
+        
+        if self.problem_expert is None:
+            self.get_logger().error("Requesting service in non-active state")
+            response.error_info = "Requesting service in non-active state"
+            response.success = False
+        else:
+            response.success = self.problem_expert.removeProblemGoal()
+        return response
 
     def clear_problem_knowledge_service_callback(self, request, response):
         self.get_logger().info(f'clear_problem_knowledge::Incoming request: {request}')
@@ -316,11 +324,35 @@ class ProblemExpertNode(Node):
     def remove_problem_instance_service_callback(self, request, response):
         self.get_logger().info(f'remove_problem_instance::Incoming request: {request}')
 
+        if self.problem_expert is None:
+            self.get_logger().error("Requesting service in non-active state")
+            response.error_info = "Requesting service in non-active state"
+            response.success = False
+        else:
+            response.success = self.problem_expert.removeProblemInstance(request.param)
+        return response
+
     def remove_problem_predicate_service_callback(self, request, response):
         self.get_logger().info(f'remove_problem_predicate::Incoming request: {request}')
 
+        if self.problem_expert is None:
+            self.get_logger().error("Requesting service in non-active state")
+            response.error_info = "Requesting service in non-active state"
+            response.success = False
+        else:
+            response.success = self.problem_expert.removeProblemPredicate(request.node)
+        return response
+
     def remove_problem_function_service_callback(self, request, response):
         self.get_logger().info(f'remove_problem_function::Incoming request: {request}')
+
+        if self.problem_expert is None:
+            self.get_logger().error("Requesting service in non-active state")
+            response.error_info = "Requesting service in non-active state"
+            response.success = False
+        else:
+            response.success = self.problem_expert.removeProblemFunction(request.node)
+        return response
 
     def exist_problem_predicate_service_callback(self, request, response):
         self.get_logger().info(f'exist_problem_predicate::Incoming request: {request}')

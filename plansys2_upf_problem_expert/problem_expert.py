@@ -55,11 +55,12 @@ class ProblemExpert():
         problem = self.parseProblem(problem_str)
         return problem is not None
 
-    # TODO: cpp code sobstitute goal
+    # sobstitute goal if present
     def addProblemGoal(self, tree: msg.Tree):
         if self.problem is None:
             return False
 
+        self.removeProblemGoal()
         nodes = dict([(node.node_id, node) for node in tree.nodes])
         for node in tree.nodes:
             self.problem.add_goal(self.domain_expert.constructFNode(nodes, node))
@@ -160,11 +161,11 @@ class ProblemExpert():
 
     def getProblemPredicate(self, predicate_str: str):
         if self.problem is None:
-            return None
+            return None, None
             
         match = re.match(r"^\s*\(\s*([\w-]+)([\s\w-]*)\)\s*$", predicate_str)
         if match is None:
-            return None
+            return None, None
 
         predicate_name = match.group(1)
         params_name = [arg.strip() for arg in match.group(2).split()]
@@ -188,9 +189,9 @@ class ProblemExpert():
                         params_match = False
                         break
                 if params_match:
-                    return predicate_msg
+                    return fnode, predicate_msg
 
-        return None
+        return None, None
 
     def getProblemPredicates(self):
         if self.problem is None:
@@ -212,11 +213,11 @@ class ProblemExpert():
 
     def getProblemFunction(self, function_str: str): # TODO
         if self.problem is None:
-            return None
+            return None, None
 
         match = re.match(r"^\s*\(\s*([\w-]+)([\s\w-]*)\)\s*$", function_str)
         if match is None:
-            return None
+            return None, None
 
         function_name = match.group(1)
         params_name = [arg.strip() for arg in match.group(2).split()]
@@ -241,9 +242,9 @@ class ProblemExpert():
                         params_match = False
                         break
                 if params_match:
-                    return function_msg
+                    return fnode, function_msg
 
-        return None
+        return None, None
 
     def getProblemFunctions(self): # TODO
         if self.problem is None:
@@ -270,32 +271,72 @@ class ProblemExpert():
 
         return self.problem_pddl
 
+    # TODO: remove useless and-node
     def removeProblemGoal(self):
-        pass
+        if self.problem is None:
+            return False
 
+        self.problem.clear_goals()
+        return True
+
+    # TODO
     def clearProblemKnowledge(self):
         pass
 
-    def removeProblemInstance(self):
-        pass
+    # TODO: type not checked
+    def removeProblemInstance(self, instance: msg.Param):
+        if self.problem is None:
+            return False
+        
+        for obj in self.problem.all_objects:
+            if obj.name.lower() == instance.name.lower():
+                self.problem._objects.remove(obj)
+                return True
+        return False
 
-    def removeProblemPredicate(self):
-        pass
+    def removeProblemPredicate(self, node: msg.Node):
+        if self.problem is None:
+            return False
+        
+        params_str = ' '.join([p.name for p in node.parameters])
+        predicate_str = f"({node.name} {params_str})"
+        predicate, predicate_msg = self.getProblemPredicate(predicate_str)
+        if predicate is None:
+            return False
+        else:
+            del self.problem._initial_value[predicate]
+            return True
 
-    def removeProblemFunction(self):
-        pass
+    def removeProblemFunction(self, node: msg.Node):
+        if self.problem is None:
+            return False
+        
+        params_str = ' '.join([p.name for p in node.parameters])
+        function_str = f"({node.name} {params_str})"
+        function, function_msg = self.getProblemFunction(function_str)
+        if function is None:
+            return False
+        else:
+            del self.problem._initial_value[function]
+            return True
 
     def existProblemPredicate(self, node: msg.Node):
+        if self.problem is None:
+            return False
+
         # params type not considered
         params_str = ' '.join([p.name for p in node.parameters])
         predicate_str = f"({node.name} {params_str})"
-        return self.getProblemPredicate(predicate_str) is not None
+        return self.getProblemPredicate(predicate_str)[0] is not None
 
     def existProblemFunction(self, node: msg.Node):
+        if self.problem is None:
+            return False
+
         # params type not considered
         params_str = ' '.join([p.name for p in node.parameters])
         function_str = f"({node.name} {params_str})"
-        return self.getProblemFunction(function_str) is not None
+        return self.getProblemFunction(function_str)[0] is not None
 
     def updateProblemFunction(self):
         pass

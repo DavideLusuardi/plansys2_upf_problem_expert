@@ -1,7 +1,7 @@
 from plansys2_msgs import msg
 
 import unified_planning as up
-from unified_planning.io import PDDLReader
+from unified_planning.io import PDDLReader, PDDLWriter
 from unified_planning.model.operators import OperatorKind
 from unified_planning.exceptions import UPValueError
 
@@ -17,32 +17,20 @@ from fractions import Fraction
 class ProblemExpert():
 
     def __init__(self, domain_filename: str):
-        # self.domain = PDDLReader().parse_problem(domain_filename, None)
         self.problem = None
-        # self.goal = None
-        # self.instances = None
-        # self.predicates = None
-        # self.functions = None
         self.domain_expert = DomainExpert(domain_filename)
-
-        self.domain_pddl = None 
-        self.problem_pddl = None
-        with open(domain_filename) as f:
-            ll = f.readlines()
-            self.domain_pddl = ''.join(ll)
         
     def parseProblem(self, problem_str):
         domain_file = tempfile.NamedTemporaryFile(mode="w", delete=False)
         problem_file = tempfile.NamedTemporaryFile(mode="w", delete=False)
         try:
-            domain_file.write(self.domain_pddl)
+            domain_file.write(self.domain_expert.getDomain())
             problem_file.write(problem_str)
             domain_file.close()
             problem_file.close()
 
-            self.problem = PDDLReader().parse_problem(domain_file.name, problem_file.name)
-            self.problem_pddl = problem_str
-            return self.problem
+            problem = PDDLReader().parse_problem(domain_file.name, problem_file.name)
+            return problem
         finally:
             os.unlink(domain_file.name)
             os.unlink(problem_file.name)
@@ -52,8 +40,8 @@ class ProblemExpert():
     # TODO: this function replace the previous problem if present
     def addProblem(self, problem_str):
         # TODO: check if empty string
-        problem = self.parseProblem(problem_str)
-        return problem is not None
+        self.problem = self.parseProblem(problem_str)
+        return self.problem is not None
 
     # sobstitute goal if present
     def addProblemGoal(self, tree: msg.Tree):
@@ -269,7 +257,7 @@ class ProblemExpert():
         if self.problem is None:
             return ""
 
-        return self.problem_pddl
+        return PDDLWriter(self.problem.clone()).get_problem() # TODO: clone should be avoided
 
     # TODO: remove useless and-node
     def removeProblemGoal(self):

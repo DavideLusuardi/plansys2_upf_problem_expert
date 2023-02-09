@@ -207,12 +207,11 @@ class MinimalClientAsync(Node):
         request = srv.AffectNode.Request()
         request.node = node
 
-        # while not self.add_problem_predicate_client.wait_for_service(timeout_sec=1.0):
-        #     self.get_logger().info('service not available, waiting again...')
-        # future = self.add_problem_predicate_client.call_async(request)
-        # rclpy.spin_until_future_complete(self, future)
-        # response = future.result()
-        response = None
+        while not self.add_problem_predicate_client.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('service not available, waiting again...')
+        future = self.add_problem_predicate_client.call_async(request)
+        rclpy.spin_until_future_complete(self, future)
+        response = future.result()
         
         while not self.add_problem_predicate_client_cpp.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('service not available, waiting again...')
@@ -664,7 +663,8 @@ def main():
 
     minimal_client = MinimalClientAsync()
 
-    with open("/home/davide/plansys2_ws/src/plansys2_upf_problem_expert/tmp/problem_simple_1.pddl") as f:
+    # with open("/home/davide/plansys2_ws/src/plansys2_upf_problem_expert/tmp/problem_simple_1.pddl") as f:
+    with open("/home/davide/plansys2_ws/src/plansys2_upf_problem_expert/tmp/simple_example_problem.pddl") as f:
         problem_str = ''.join(f.readlines())
 
     minimal_client.addProblem(problem_str)
@@ -682,8 +682,10 @@ def main():
     # node.name = "robot_at"
     # node.parameters.append(msg.Param())
     # node.parameters[-1].name = "leia"
+    # node.parameters[-1].type = "robot"
     # node.parameters.append(msg.Param())
-    # node.parameters[-1].name = "kitchen"
+    # node.parameters[-1].name = "chargingroom"
+    # node.parameters[-1].type = "room"
     # minimal_client.existProblemPredicate(node)
 
     # node = msg.Node()
@@ -704,10 +706,10 @@ def main():
     # node.name = "robot_at"
     # node.parameters.append(msg.Param())
     # node.parameters[-1].name = "leia"
-    # # node.parameters[-1].type = "robot"
+    # node.parameters[-1].type = "robot"
     # node.parameters.append(msg.Param())
-    # node.parameters[-1].name = "bedroom"
-    # # node.parameters[-1].type = "room"
+    # node.parameters[-1].name = "chargingroom"
+    # node.parameters[-1].type = "room"
     # minimal_client.addProblemPredicate(node)
     # minimal_client.getProblemPredicates()
 
@@ -760,18 +762,18 @@ def main():
     # minimal_client.removeProblemPredicate(node)
     # minimal_client.getProblemPredicates()
 
-    minimal_client.getProblemFunctions()
-    node = msg.Node()
-    node.node_type = msg.Node.FUNCTION
-    node.name = "room_distance"
-    node.parameters.append(msg.Param())
-    node.parameters[-1].name = "kitchen"
-    node.parameters[-1].type = "room"
-    node.parameters.append(msg.Param())
-    node.parameters[-1].name = "bedroom"
-    node.parameters[-1].type = "room"
-    minimal_client.removeProblemFunction(node)
-    minimal_client.getProblemFunctions()
+    # minimal_client.getProblemFunctions()
+    # node = msg.Node()
+    # node.node_type = msg.Node.FUNCTION
+    # node.name = "room_distance"
+    # node.parameters.append(msg.Param())
+    # node.parameters[-1].name = "kitchen"
+    # node.parameters[-1].type = "room"
+    # node.parameters.append(msg.Param())
+    # node.parameters[-1].name = "bedroom"
+    # node.parameters[-1].type = "room"
+    # minimal_client.removeProblemFunction(node)
+    # minimal_client.getProblemFunctions()
 
     minimal_client.destroy_node()
     rclpy.shutdown()

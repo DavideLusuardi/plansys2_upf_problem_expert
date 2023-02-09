@@ -3,6 +3,8 @@ from plansys2_msgs import msg
 import unified_planning as up
 from unified_planning.io import PDDLReader, PDDLWriter
 from unified_planning.model.operators import OperatorKind
+from unified_planning.model import Fluent
+from unified_planning.model.object import Object
 from unified_planning.exceptions import UPValueError
 
 from plansys2_upf_domain_expert import DomainExpert
@@ -19,31 +21,52 @@ class ProblemExpert():
     def __init__(self, domain_filename: str):
         self.problem = None
         self.domain_expert = DomainExpert(domain_filename)
-        
-    def parseProblem(self, problem_str):
-        domain_file = tempfile.NamedTemporaryFile(mode="w", delete=False)
-        problem_file = tempfile.NamedTemporaryFile(mode="w", delete=False)
-        try:
-            domain_file.write(self.domain_expert.getDomain())
-            problem_file.write(problem_str)
-            domain_file.close()
-            problem_file.close()
 
-            problem = PDDLReader().parse_problem(domain_file.name, problem_file.name)
-            return problem
-        finally:
-            os.unlink(domain_file.name)
-            os.unlink(problem_file.name)
-        
-        return None
+    # TODO: manage exceptions
+    def constructFNode(self, nodes, node: msg.Node) -> up.model.fnode.FNode:
+        node_type = None
+        args = None
+        payload = None
+        fnode = None
 
-    # TODO: this function replace the previous problem if present
+        if node.node_type == msg.Node.NUMBER:
+            # node_type = self.inverse_map[node.node_type]
+            fnode = self.domain.env.expression_manager.Real(Fraction(node.value))
+
+        elif node.node_type in self.inverse_map:
+            node_type = self.inverse_map[node.node_type]
+            args = [self.constructFNode(nodes, nodes[child_id]) for child_id in node.children]
+
+        elif node.node_type in (msg.Node.PREDICATE, msg.Node.FUNCTION):
+            # node_type = OperatorKind.FLUENT_EXP
+            # TODO: Object or Parameter?
+            parameters = [Object(p.name, self.domain.user_type(p.type), self.domain.env) for p in node.parameters] # TODO: self.domain.user_type(p.type) can throw an execption
+            if node.node_type == msg.Node.PREDICATE:
+                fluent = Fluent(node.name, self.domain.env.type_manager.BoolType(), parameters, self.domain.env)
+            else:
+                fluent = Fluent(node.name, self.domain.env.type_manager.RealType(), parameters, self.domain.env)
+            fnode = self.domain.env.expression_manager.FluentExp(fluent, fluent.signature)
+
+        elif node.node_type == msg.Node.EXPRESSION:
+            pass # TODO
+        elif node.node_type == msg.Node.FUNCTION_MODIFIER:
+            pass # TODO
+
+        if fnode is None:
+            fnode = self.domain.env.expression_manager.create_node(node_type, args, payload)
+
+        return fnode
+
+    # TODO: this function replaces the previous problem if present
     def addProblem(self, problem_str):
         # TODO: check if empty string
-        self.problem = self.parseProblem(problem_str)
-        return self.problem is not None
+        try:
+            self.problem = PDDLReader().parse_problem_string(self.domain_expert.getDomain(), problem_str)
+            return True
+        except:
+            return False
 
-    # sobstitute goal if present
+    # this function sobstitutes the goal if present
     def addProblemGoal(self, tree: msg.Tree):
         if self.problem is None:
             return False
@@ -51,7 +74,7 @@ class ProblemExpert():
         self.removeProblemGoal()
         nodes = dict([(node.node_id, node) for node in tree.nodes])
         for node in tree.nodes:
-            self.problem.add_goal(self.domain_expert.constructFNode(nodes, node))
+            self.problem.add_goal(self.constructFNode(nodes, node))
         return True
 
     # TODO: check if instance already exists 
@@ -106,7 +129,6 @@ class ProblemExpert():
                 return False
             parameters.append(up.model.Object(p.name, type, self.problem.env))
         
-        print(f"parameters: {parameters}")
         fluent = up.model.Fluent(node.name, self.problem.env.type_manager.RealType(), parameters, self.problem.env)
         fnode = self.problem.env.expression_manager.FluentExp(fluent, fluent.signature)
         self.problem.set_initial_value(fnode, self.problem.env.expression_manager.Real(Fraction(0))) # TODO
@@ -199,7 +221,7 @@ class ProblemExpert():
                 predicates.append(predicate_msg)
         return predicates
 
-    def getProblemFunction(self, function_str: str): # TODO
+    def getProblemFunction(self, function_str: str):
         if self.problem is None:
             return None, None
 
@@ -234,7 +256,7 @@ class ProblemExpert():
 
         return None, None
 
-    def getProblemFunctions(self): # TODO
+    def getProblemFunctions(self):
         if self.problem is None:
             return []
 
@@ -312,7 +334,7 @@ class ProblemExpert():
         if self.problem is None:
             return False
 
-        # params type not considered
+        # TODO: params type not considered
         params_str = ' '.join([p.name for p in node.parameters])
         predicate_str = f"({node.name} {params_str})"
         return self.getProblemPredicate(predicate_str)[0] is not None
@@ -321,14 +343,15 @@ class ProblemExpert():
         if self.problem is None:
             return False
 
-        # params type not considered
+        # TODO: params type not considered
         params_str = ' '.join([p.name for p in node.parameters])
         function_str = f"({node.name} {params_str})"
         return self.getProblemFunction(function_str)[0] is not None
 
+    # TODO
     def updateProblemFunction(self):
         pass
 
+    # TODO
     def isProblemGoalSatisfied(self):
         pass
-

@@ -1,4 +1,5 @@
 from plansys2_msgs import msg
+from plansys2_upf_domain_expert import DomainExpert
 
 import unified_planning as up
 from unified_planning.io import PDDLReader, PDDLWriter
@@ -6,56 +7,34 @@ from unified_planning.model.operators import OperatorKind
 from unified_planning.model import Fluent
 from unified_planning.model.object import Object
 from unified_planning.exceptions import UPValueError
+from unified_planning.io.pddl_reader import CaseInsensitiveToken, nested_expr
 
-from plansys2_upf_domain_expert import DomainExpert
-
-from typing import List, Dict
-import tempfile
-import os
 import re
 from fractions import Fraction
 
+from typing import List, Dict, Optional
 
 class ProblemExpert():
 
     def __init__(self, domain_filename: str):
-        self.problem = None
         self.domain_expert = DomainExpert(domain_filename)
+        self.problem = PDDLReader().parse_problem_string(self.domain_expert.getDomain())
 
-    # TODO: manage exceptions
-    def constructFNode(self, nodes, node: msg.Node) -> up.model.fnode.FNode:
-        node_type = None
-        args = None
-        payload = None
-        fnode = None
-
-        if node.node_type == msg.Node.NUMBER:
-            # node_type = self.inverse_map[node.node_type]
-            fnode = self.domain.env.expression_manager.Real(Fraction(node.value))
-
-        elif node.node_type in self.inverse_map:
-            node_type = self.inverse_map[node.node_type]
-            args = [self.constructFNode(nodes, nodes[child_id]) for child_id in node.children]
-
-        elif node.node_type in (msg.Node.PREDICATE, msg.Node.FUNCTION):
-            # node_type = OperatorKind.FLUENT_EXP
-            # TODO: Object or Parameter?
-            parameters = [Object(p.name, self.domain.user_type(p.type), self.domain.env) for p in node.parameters] # TODO: self.domain.user_type(p.type) can throw an execption
-            if node.node_type == msg.Node.PREDICATE:
-                fluent = Fluent(node.name, self.domain.env.type_manager.BoolType(), parameters, self.domain.env)
-            else:
-                fluent = Fluent(node.name, self.domain.env.type_manager.RealType(), parameters, self.domain.env)
-            fnode = self.domain.env.expression_manager.FluentExp(fluent, fluent.signature)
-
-        elif node.node_type == msg.Node.EXPRESSION:
-            pass # TODO
-        elif node.node_type == msg.Node.FUNCTION_MODIFIER:
-            pass # TODO
-
-        if fnode is None:
-            fnode = self.domain.env.expression_manager.create_node(node_type, args, payload)
-
-        return fnode
+        self.operators_map = {
+            # msg.Node.UNKNOWN: '', # TODO
+            msg.Node.AND: 'and',
+            msg.Node.OR: 'or',
+            msg.Node.NOT: 'not',
+            msg.Node.COMP_EQ: '=',
+            msg.Node.COMP_GE: '>=',
+            msg.Node.COMP_GT: '>',
+            msg.Node.COMP_LE: '<=',
+            msg.Node.COMP_LT: '<',
+            msg.Node.ARITH_MULT: '*',
+            msg.Node.ARITH_DIV: '/',
+            msg.Node.ARITH_ADD: '+',
+            msg.Node.ARITH_SUB: '-',
+        }
 
     # TODO: this function replaces the previous problem if present
     def addProblem(self, problem_str):
@@ -66,22 +45,51 @@ class ProblemExpert():
         except:
             return False
 
+    def _constructGoalExp(self, nodes, node_id):
+        node = nodes[node_id]
+        if node.node_type in [msg.Node.AND, msg.Node.OR, msg.Node.NOT]:
+            sub_exp = ' '.join([self._constructGoalExp(nodes, child_id) for child_id in node.children])
+            exp = f'({self.operators_map[node.node_type]} {sub_exp})'
+        elif node.node_type == msg.Node.NUMBER:
+            exp = f'{node.value}'
+        elif node.node_type in [msg.Node.PREDICATE, msg.Node.FUNCTION]:
+            param_exp = ' '.join([param.name for param in node.parameters])
+            exp = f'({node.name} {param_exp})'
+        elif node.node_type == msg.Node.EXPRESSION:
+            sub_exp = ' '.join([self._constructGoalExp(nodes, child_id) for child_id in node.children])
+            exp = f'({self.operators_map[node.expression_type]} {sub_exp})'
+        else:
+            raise Exception('node_type not valid')
+
+        return exp
+        
     # this function sobstitutes the goal if present
     def addProblemGoal(self, tree: msg.Tree):
-        if self.problem is None:
-            return False
-
         self.removeProblemGoal()
-        nodes = dict([(node.node_id, node) for node in tree.nodes])
-        for node in tree.nodes:
-            self.problem.add_goal(self.constructFNode(nodes, node))
-        return True
+
+        try:
+            types_map = {}
+            for tt in self.problem.user_types_hierarchy.values():
+                if len(tt) > 0:
+                    for t in tt:
+                        types_map[CaseInsensitiveToken(t.name)] = self.problem.user_type(t.name)
+
+            nodes = dict([(node.node_id, node) for node in tree.nodes])
+            goal_exp = self._constructGoalExp(nodes, 0)
+            print(f'goal_exp::{goal_exp}')
+            goal_res = nested_expr().setResultsName("goal").parse_string(goal_exp, parse_all=True)
+            goalFNode = PDDLReader()._parse_exp(self.problem, None, types_map, {}, goal_res["goal"][0])
+            print(f"goalFNode::{goalFNode}")
+            self.problem.add_goal(
+                goalFNode
+            )
+
+            return True
+        except:
+            return False
 
     # TODO: check if instance already exists 
-    def addProblemInstance(self, instance: msg.Param):
-        if self.problem is None:
-            return False
-        
+    def addProblemInstance(self, instance: msg.Param):        
         try:
             type = self.problem.user_type(instance.type)
         except UPValueError:
@@ -90,55 +98,31 @@ class ProblemExpert():
         self.problem.add_object(up.model.Object(instance.name, type, self.problem.env))
         return True
 
-    # TODO: check if predicate already exists, if it is valid
-    # TODO: manage cases where types are not defined
     def addProblemPredicate(self, node: msg.Node):
-        if self.problem is None:
+        try:
+            fluent = self.problem.fluent(node.name)
+            objs = []
+            for p in node.parameters:
+                objs.append(self.problem.object(p.name))
+        except UPValueError:
             return False
-
-        if self.existProblemPredicate(node):
-            return False
-
-        parameters = list()
-        for p in node.parameters:
-            try:
-                type = self.problem.user_type(p.type)
-            except UPValueError:
-                return False
-            parameters.append(up.model.Object(p.name, type, self.problem.env))
-
-        fluent = up.model.Fluent(node.name, self.problem.env.type_manager.BoolType(), parameters, self.problem.env)
-        fnode = self.problem.env.expression_manager.FluentExp(fluent, fluent.signature)
-        self.problem.set_initial_value(fnode, self.problem.env.expression_manager.TRUE())
-        # TODO: use add_fluent()?
-
+        
+        self.problem.set_initial_value(fluent(*objs), True)
         return True
 
     def addProblemFunction(self, node):
-        if self.problem is None:
+        try:
+            fluent = self.problem.fluent(node.name)
+            objs = []
+            for p in node.parameters:
+                objs.append(self.problem.object(p.name))
+        except UPValueError:
             return False
-
-        if self.existProblemFunction(node):
-            return False # TODO: update function instead of return false
-
-        parameters = list()
-        for p in node.parameters:
-            try:
-                type = self.problem.user_type(p.type)
-            except UPValueError:
-                return False
-            parameters.append(up.model.Object(p.name, type, self.problem.env))
         
-        fluent = up.model.Fluent(node.name, self.problem.env.type_manager.RealType(), parameters, self.problem.env)
-        fnode = self.problem.env.expression_manager.FluentExp(fluent, fluent.signature)
-        self.problem.set_initial_value(fnode, self.problem.env.expression_manager.Real(Fraction(0))) # TODO
-
+        self.problem.set_initial_value(fluent(*objs), self.problem.env.expression_manager.Real(Fraction(node.value)))
         return True
 
     def getProblemGoal(self):
-        if self.problem is None:
-            return []
-        
         # TODO: consider timed goals
         tree = msg.Tree()
         tree.nodes = list()
@@ -149,36 +133,28 @@ class ProblemExpert():
         tree.nodes.append(and_node)
 
         for goal in self.problem.goals:
+            print(f"getProblemGoal::{goal}")
             node = self.domain_expert.constructTree(goal, tree.nodes)
             and_node.children.append(node.node_id)
 
         return tree
 
-    def getProblemInstance(self, instance: str):
-        if self.problem is None:
-            return None
-
+    def getProblemInstance(self, instance_name: str):
         for obj in self.problem.all_objects:
-            if obj.name.lower() == instance.strip().lower():
+            if obj.name.lower() == instance_name.strip().lower():
                 return self.domain_expert.constructParameters([obj])[0]
         return None
 
     def getProblemInstances(self):
-        if self.problem is None:
-            return []
-        
         return self.domain_expert.constructParameters(self.problem.all_objects)
 
-    def getProblemPredicate(self, predicate_str: str):
-        if self.problem is None:
-            return None, None
-            
-        match = re.match(r"^\s*\(\s*([\w-]+)([\s\w-]*)\)\s*$", predicate_str)
+    def getProblemPredicate(self, predicate_exp: str):
+        match = re.match(r"^\s*\(\s*([\w-]+)([\s\w-]*)\)\s*$", predicate_exp)
         if match is None:
             return None, None
 
         predicate_name = match.group(1)
-        params_name = [arg.strip() for arg in match.group(2).split()]
+        param_names = [arg.strip() for arg in match.group(2).split()]
 
         for i, fnode in enumerate(self.problem.explicit_initial_values):
             assert(fnode.is_fluent_exp())
@@ -191,11 +167,11 @@ class ProblemExpert():
                 params_map = dict([(p.name, fnode.args[j].object().name) for j,p in enumerate(predicate.signature)])
                 predicate_msg.parameters = self.domain_expert.constructParameters(predicate.signature, params_map) # TODO: avoid construct parameters all the times
                 
-                params_match = (len(predicate_msg.parameters) == len(params_name))
+                params_match = (len(predicate_msg.parameters) == len(param_names))
                 if not params_match:
                     continue
                 for j, param in enumerate(predicate_msg.parameters):
-                    if param.name.lower() != params_name[j].lower():
+                    if param.name.lower() != param_names[j].lower():
                         params_match = False
                         break
                 if params_match:
@@ -204,9 +180,6 @@ class ProblemExpert():
         return None, None
 
     def getProblemPredicates(self):
-        if self.problem is None:
-            return []
-
         predicates = list()
         for i, fnode in enumerate(self.problem.explicit_initial_values):
             assert(fnode.is_fluent_exp())
@@ -222,9 +195,6 @@ class ProblemExpert():
         return predicates
 
     def getProblemFunction(self, function_str: str):
-        if self.problem is None:
-            return None, None
-
         match = re.match(r"^\s*\(\s*([\w-]+)([\s\w-]*)\)\s*$", function_str)
         if match is None:
             return None, None
@@ -257,9 +227,6 @@ class ProblemExpert():
         return None, None
 
     def getProblemFunctions(self):
-        if self.problem is None:
-            return []
-
         functions = list()
         for i, fnode in enumerate(self.problem.explicit_initial_values):
             assert(fnode.is_fluent_exp())
@@ -276,28 +243,19 @@ class ProblemExpert():
         return functions
 
     def getProblem(self) -> str:
-        if self.problem is None:
-            return ""
-
         return PDDLWriter(self.problem.clone()).get_problem() # TODO: clone should be avoided
 
     # TODO: remove useless and-node
     def removeProblemGoal(self):
-        if self.problem is None:
-            return False
-
         self.problem.clear_goals()
         return True
 
-    # TODO
+    # TODO: implement
     def clearProblemKnowledge(self):
         pass
 
     # TODO: type not checked
     def removeProblemInstance(self, instance: msg.Param):
-        if self.problem is None:
-            return False
-        
         for obj in self.problem.all_objects:
             if obj.name.lower() == instance.name.lower():
                 self.problem._objects.remove(obj)
@@ -305,12 +263,9 @@ class ProblemExpert():
         return False
 
     def removeProblemPredicate(self, node: msg.Node):
-        if self.problem is None:
-            return False
-        
         params_str = ' '.join([p.name for p in node.parameters])
-        predicate_str = f"({node.name} {params_str})"
-        predicate, predicate_msg = self.getProblemPredicate(predicate_str)
+        predicate_exp = f"({node.name} {params_str})"
+        predicate, predicate_msg = self.getProblemPredicate(predicate_exp)
         if predicate is None:
             return False
         else:
@@ -318,9 +273,6 @@ class ProblemExpert():
             return True
 
     def removeProblemFunction(self, node: msg.Node):
-        if self.problem is None:
-            return False
-        
         params_str = ' '.join([p.name for p in node.parameters])
         function_str = f"({node.name} {params_str})"
         function, function_msg = self.getProblemFunction(function_str)
@@ -331,27 +283,30 @@ class ProblemExpert():
             return True
 
     def existProblemPredicate(self, node: msg.Node):
-        if self.problem is None:
-            return False
-
         # TODO: params type not considered
         params_str = ' '.join([p.name for p in node.parameters])
-        predicate_str = f"({node.name} {params_str})"
-        return self.getProblemPredicate(predicate_str)[0] is not None
+        predicate_exp = f"({node.name} {params_str})"
+        return self.getProblemPredicate(predicate_exp)[0] is not None
 
     def existProblemFunction(self, node: msg.Node):
-        if self.problem is None:
-            return False
-
         # TODO: params type not considered
         params_str = ' '.join([p.name for p in node.parameters])
         function_str = f"({node.name} {params_str})"
         return self.getProblemFunction(function_str)[0] is not None
 
-    # TODO
-    def updateProblemFunction(self):
-        pass
+    # TODO: test
+    def updateProblemFunction(self, node):
+        try:
+            fluent = self.problem.fluent(node.name)
+            objs = []
+            for p in node.parameters:
+                objs.append(self.problem.object(p.name))
+        except UPValueError:
+            return False
+        
+        self.problem.set_initial_value(fluent(*objs), self.problem.env.expression_manager.Real(Fraction(node.value)))
+        return True
 
-    # TODO
+    # TODO: implement
     def isProblemGoalSatisfied(self):
         pass

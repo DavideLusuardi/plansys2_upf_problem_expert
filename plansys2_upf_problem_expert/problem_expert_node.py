@@ -149,7 +149,7 @@ class ProblemExpertNode(Node):
         return response
 
     def add_problem_goal_service_callback(self, request, response):
-        # self.get_logger().info(f'add_problem_goal::Incoming request: {request}')
+        self.get_logger().info(f'add_problem_goal::Incoming request: {request}')
 
         if self.problem_expert is None:
             self.get_logger().error("Requesting service in non-active state")
@@ -157,6 +157,8 @@ class ProblemExpertNode(Node):
             response.success = False
         else:
             response.success = self.problem_expert.addProblemGoal(request.tree)
+            if not response.success:
+                response.error_info = "Goal not valid"
 
         return response
 
@@ -197,7 +199,7 @@ class ProblemExpertNode(Node):
         return response
 
     def get_problem_goal_service_callback(self, request, response):
-        # self.get_logger().info(f'get_problem_goal::Incoming request: {request}')
+        self.get_logger().info(f'get_problem_goal::Incoming request: {request}')
 
         if self.problem_expert is None:
             self.get_logger().error("Requesting service in non-active state")
@@ -206,6 +208,7 @@ class ProblemExpertNode(Node):
         else:
             response.tree = self.problem_expert.getProblemGoal()
             response.success = True
+            self.get_logger().info(f"{response.tree}")
         return response
 
     def get_problem_instance_service_callback(self, request, response):
@@ -379,7 +382,15 @@ class ProblemExpertNode(Node):
 
     def update_problem_function_service_callback(self, request, response):
         # self.get_logger().info(f'update_problem_function::Incoming request: {request}')
-        raise Exception("not implemented") # TODO
+
+        if self.problem_expert is None:
+            self.get_logger().error("Requesting service in non-active state")
+            response.error_info = "Requesting service in non-active state"
+            response.success = False
+        else:
+            response.success = self.problem_expert.updateProblemFunction(request.node)
+
+        return response
 
     def is_problem_goal_satisfied_service_callback(self, request, response):
         # self.get_logger().info(f'is_problem_goal_satisfied::Incoming request: {request}')
@@ -391,9 +402,11 @@ def main():
 
     problem_expert_node = ProblemExpertNode()
 
-    rclpy.spin(problem_expert_node)
-
-    rclpy.shutdown()
+    try:
+        rclpy.spin(problem_expert_node)
+        rclpy.shutdown()
+    except KeyboardInterrupt:
+        pass
 
 
 if __name__ == '__main__':

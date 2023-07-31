@@ -69,7 +69,6 @@ class ProblemExpertNode(Node):
     def get_state_service_callback(self, request, response):
         response.current_state = State()
         response.current_state.id = self.state
-        # response.current_state.label = "" # TODO
         return response
 
     def change_state_service_callback(self, request, response):
@@ -100,11 +99,11 @@ class ProblemExpertNode(Node):
             "model_file").get_parameter_value().string_value
         try:
             self.problem_expert = ProblemExpert(model_file)
-            self.state = State.PRIMARY_STATE_INACTIVE
         except:
             self.get_logger().error("PDDL syntax error")
             return False
 
+        self.state = State.PRIMARY_STATE_INACTIVE
         self.get_logger().info(f"[{self.get_name()}] Configured")
         return True
 
@@ -137,8 +136,6 @@ class ProblemExpertNode(Node):
 
 
     def add_problem_service_callback(self, request, response):
-        # self.get_logger().info(f'add_problem::Incoming request: {request}')
-
         if self.problem_expert is None:
             self.get_logger().error("Requesting service in non-active state")
             response.error_info = "Requesting service in non-active state"
@@ -149,8 +146,6 @@ class ProblemExpertNode(Node):
         return response
 
     def add_problem_goal_service_callback(self, request, response):
-        self.get_logger().info(f'add_problem_goal::Incoming request: {request}')
-
         if self.problem_expert is None:
             self.get_logger().error("Requesting service in non-active state")
             response.error_info = "Requesting service in non-active state"
@@ -163,8 +158,6 @@ class ProblemExpertNode(Node):
         return response
 
     def add_problem_instance_service_callback(self, request, response):
-        # self.get_logger().info(f'add_problem_instance::Incoming request: {request}')
-
         if self.problem_expert is None:
             self.get_logger().error("Requesting service in non-active state")
             response.error_info = "Requesting service in non-active state"
@@ -175,8 +168,6 @@ class ProblemExpertNode(Node):
         return response
 
     def add_problem_predicate_service_callback(self, request, response):
-        # self.get_logger().info(f'add_problem_predicate::Incoming request: {request}')
-
         if self.problem_expert is None:
             self.get_logger().error("Requesting service in non-active state")
             response.error_info = "Requesting service in non-active state"
@@ -187,8 +178,6 @@ class ProblemExpertNode(Node):
         return response
 
     def add_problem_function_service_callback(self, request, response):
-        # self.get_logger().info(f'add_problem_function::Incoming request: {request}')
-
         if self.problem_expert is None:
             self.get_logger().error("Requesting service in non-active state")
             response.error_info = "Requesting service in non-active state"
@@ -199,8 +188,6 @@ class ProblemExpertNode(Node):
         return response
 
     def get_problem_goal_service_callback(self, request, response):
-        self.get_logger().info(f'get_problem_goal::Incoming request: {request}')
-
         if self.problem_expert is None:
             self.get_logger().error("Requesting service in non-active state")
             response.error_info = "Requesting service in non-active state"
@@ -212,8 +199,6 @@ class ProblemExpertNode(Node):
         return response
 
     def get_problem_instance_service_callback(self, request, response):
-        # self.get_logger().info(f'get_problem_instance::Incoming request: {request}')
-
         if self.problem_expert is None:
             self.get_logger().error("Requesting service in non-active state")
             response.error_info = "Requesting service in non-active state"
@@ -229,8 +214,6 @@ class ProblemExpertNode(Node):
         return response
 
     def get_problem_instances_service_callback(self, request, response):
-        # self.get_logger().info(f'get_problem_instances::Incoming request: {request}')
-
         if self.problem_expert is None:
             self.get_logger().error("Requesting service in non-active state")
             response.error_info = "Requesting service in non-active state"
@@ -241,8 +224,6 @@ class ProblemExpertNode(Node):
         return response
 
     def get_problem_predicate_service_callback(self, request, response):
-        # self.get_logger().info(f'get_problem_predicate::Incoming request: {request}')
-
         if self.problem_expert is None:
             self.get_logger().error("Requesting service in non-active state")
             response.error_info = "Requesting service in non-active state"
@@ -258,8 +239,6 @@ class ProblemExpertNode(Node):
         return response
 
     def get_problem_predicates_service_callback(self, request, response):
-        # self.get_logger().info(f'get_problem_predicates::Incoming request: {request}')
-
         if self.problem_expert is None:
             self.get_logger().error("Requesting service in non-active state")
             response.error_info = "Requesting service in non-active state"
@@ -270,8 +249,6 @@ class ProblemExpertNode(Node):
         return response
 
     def get_problem_function_service_callback(self, request, response):
-        # self.get_logger().info(f'get_problem_function::Incoming request: {request}')
-        
         if self.problem_expert is None:
             self.get_logger().error("Requesting service in non-active state")
             response.error_info = "Requesting service in non-active state"
@@ -287,8 +264,6 @@ class ProblemExpertNode(Node):
         return response
 
     def get_problem_functions_service_callback(self, request, response):
-        # self.get_logger().info(f'get_problem_functions::Incoming request: {request}')
-        
         if self.problem_expert is None:
             self.get_logger().error("Requesting service in non-active state")
             response.error_info = "Requesting service in non-active state"
@@ -299,8 +274,6 @@ class ProblemExpertNode(Node):
         return response
 
     def get_problem_service_callback(self, request, response):
-        # self.get_logger().info(f'get_problem::Incoming request: {request}')
-
         if self.problem_expert is None:
             self.get_logger().error("Requesting service in non-active state")
             response.error_info = "Requesting service in non-active state"
@@ -311,8 +284,6 @@ class ProblemExpertNode(Node):
         return response
 
     def remove_problem_goal_service_callback(self, request, response):
-        # self.get_logger().info(f'remove_problem_goal::Incoming request: {request}')
-        
         if self.problem_expert is None:
             self.get_logger().error("Requesting service in non-active state")
             response.error_info = "Requesting service in non-active state"
@@ -322,12 +293,15 @@ class ProblemExpertNode(Node):
         return response
 
     def clear_problem_knowledge_service_callback(self, request, response):
-        # self.get_logger().info(f'clear_problem_knowledge::Incoming request: {request}')
-        raise Exception("not implemented") # TODO
+        if self.problem_expert is None:
+            self.get_logger().error("Requesting service in non-active state")
+            response.error_info = "Requesting service in non-active state"
+            response.success = False
+        else:
+            response.success = self.problem_expert.clearProblemKnowledge()
+        return response
 
     def remove_problem_instance_service_callback(self, request, response):
-        # self.get_logger().info(f'remove_problem_instance::Incoming request: {request}')
-
         if self.problem_expert is None:
             self.get_logger().error("Requesting service in non-active state")
             response.error_info = "Requesting service in non-active state"
@@ -337,8 +311,6 @@ class ProblemExpertNode(Node):
         return response
 
     def remove_problem_predicate_service_callback(self, request, response):
-        # self.get_logger().info(f'remove_problem_predicate::Incoming request: {request}')
-
         if self.problem_expert is None:
             self.get_logger().error("Requesting service in non-active state")
             response.error_info = "Requesting service in non-active state"
@@ -348,8 +320,6 @@ class ProblemExpertNode(Node):
         return response
 
     def remove_problem_function_service_callback(self, request, response):
-        # self.get_logger().info(f'remove_problem_function::Incoming request: {request}')
-
         if self.problem_expert is None:
             self.get_logger().error("Requesting service in non-active state")
             response.error_info = "Requesting service in non-active state"
@@ -359,8 +329,6 @@ class ProblemExpertNode(Node):
         return response
 
     def exist_problem_predicate_service_callback(self, request, response):
-        # self.get_logger().info(f'exist_problem_predicate::Incoming request: {request}')
-
         if self.problem_expert is None:
             self.get_logger().error("Requesting service in non-active state")
             response.error_info = "Requesting service in non-active state"
@@ -370,8 +338,6 @@ class ProblemExpertNode(Node):
         return response
 
     def exist_problem_function_service_callback(self, request, response):
-        # self.get_logger().info(f'exist_problem_function::Incoming request: {request}')
-
         if self.problem_expert is None:
             self.get_logger().error("Requesting service in non-active state")
             response.error_info = "Requesting service in non-active state"
@@ -381,21 +347,22 @@ class ProblemExpertNode(Node):
         return response
 
     def update_problem_function_service_callback(self, request, response):
-        # self.get_logger().info(f'update_problem_function::Incoming request: {request}')
-
         if self.problem_expert is None:
             self.get_logger().error("Requesting service in non-active state")
             response.error_info = "Requesting service in non-active state"
             response.success = False
         else:
             response.success = self.problem_expert.updateProblemFunction(request.node)
-
         return response
 
     def is_problem_goal_satisfied_service_callback(self, request, response):
-        # self.get_logger().info(f'is_problem_goal_satisfied::Incoming request: {request}')
-        raise Exception("not implemented") # TODO
-
+        if self.problem_expert is None:
+            self.get_logger().error("Requesting service in non-active state")
+            response.error_info = "Requesting service in non-active state"
+            response.success = False
+        else:
+            response.success = self.problem_expert.isProblemGoalSatisfied()
+        return response
 
 def main():
     rclpy.init()

@@ -15,18 +15,20 @@ setup(
         
         # Include all launch files.
         (os.path.join('share', package_name, 'launch'), glob('launch/*launch.[pxy][yma]*')),
+
+        # Include test files
+        (os.path.join('share', package_name, 'test', 'pddl'), glob('test/pddl/*')),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
     maintainer='davide',
     maintainer_email='davide.lusuardi@studenti.unitn.it',
-    description='TODO: Package description',
-    license='TODO: License declaration',
+    description='This package contains the Problem Expert module for the ROS2 Planning System based on the Unified Planning Framework',
+    license='Apache License, Version 2.0',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
             'problem_expert_node = plansys2_upf_problem_expert.problem_expert_node:main',
-            'client = plansys2_upf_problem_expert.my_client:main',
         ],
     },
 )

@@ -1,8 +1,4 @@
-from plansys2_msgs import srv, msg
-from lifecycle_msgs.srv import GetState, ChangeState
-from lifecycle_msgs.msg import Transition
-import rclpy
-from rclpy.node import Node
+from plansys2_msgs import msg
 from plansys2_upf_problem_expert import ProblemExpert
 from ament_index_python.packages import get_package_share_directory
 
@@ -142,12 +138,6 @@ def test_removeProblemFunction(problem: ProblemExpert):
     node = msg.Node()
     node.node_type = msg.Node.FUNCTION
     node.name = "distance_travelled"
-    # node.parameters.append(msg.Param())
-    # node.parameters[-1].name = "kitchen"
-    # node.parameters[-1].type = "room"
-    # node.parameters.append(msg.Param())
-    # node.parameters[-1].name = "bedroom"
-    # node.parameters[-1].type = "room"
     assert(problem.removeProblemFunction(node))
     assert(not problem.removeProblemFunction(node))
 
@@ -171,12 +161,6 @@ def test_existProblemFunction(problem: ProblemExpert):
     node = msg.Node()
     node.node_type = msg.Node.FUNCTION
     node.name = "distance_travelled"
-    # node.parameters.append(msg.Param())
-    # node.parameters[-1].name = "kitchen"
-    # node.parameters[-1].type = "room"
-    # node.parameters.append(msg.Param())
-    # node.parameters[-1].name = "bedroom"
-    # node.parameters[-1].type = "room"
     assert(problem.existProblemFunction(node))
 
 def test_updateProblemFunction(problem: ProblemExpert):

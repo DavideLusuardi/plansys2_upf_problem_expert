@@ -23,12 +23,10 @@
     (charging_point_at chargingroom)
     (battery_low leia)
     (robot_at leia entrance)
-    ; (= (distance_travelled) 0)
   )
 
   ;; The goal is to have both packages delivered to their destinations:
   (:goal
-    ; (and(robot_at leia entrance))
     (and(robot_at leia bathroom))
   )
 )

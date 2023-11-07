@@ -29,8 +29,6 @@ room
         (at start(connected ?r1 ?r2))
         (at start(robot_at ?r ?r1))
         (over all(battery_full ?r))
-        ; (at start(forall (?r - robot) (robot_at ?r ?r1)))
-        ; (at start(imply (robot_at ?r ?r1) (battery_full ?r)))
         )
     :effect (and
         (at start(not(robot_at ?r ?r1)))

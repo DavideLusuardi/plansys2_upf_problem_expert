@@ -131,7 +131,7 @@ class ProblemExpert():
         tree.nodes.append(and_node)
 
         for goal in self.problem.goals:
-            node = self.domain_expert.constructTree(goal, tree.nodes)
+            node = self.domain_expert._constructTree(goal, tree.nodes)
             and_node.children.append(node.node_id)
 
         return tree
@@ -139,12 +139,12 @@ class ProblemExpert():
     def getProblemInstance(self, instance_name: str) -> msg.Param:
         try:
             obj = self.problem.object(instance_name.lower())
-            return self.domain_expert.constructParameters([obj])[0]
+            return self.domain_expert._constructParameters([obj])[0]
         except UPValueError:
             return None
 
     def getProblemInstances(self) -> List[msg.Param]:
-        return self.domain_expert.constructParameters(self.problem.all_objects)
+        return self.domain_expert._constructParameters(self.problem.all_objects)
 
     def getProblemPredicate(self, predicate_exp: str) -> Tuple[up.model.fnode.FNode, msg.Node]:
         match = re.match(r"^\s*\(\s*([\w-]+)([\s\w-]*)\)\s*$", predicate_exp)
@@ -163,7 +163,7 @@ class ProblemExpert():
                 predicate_msg.node_id = i
                 predicate_msg.name = predicate.name
                 params_map = dict([(p.name, fnode.args[j].object().name) for j,p in enumerate(predicate.signature)])
-                predicate_msg.parameters = self.domain_expert.constructParameters(predicate.signature, params_map)
+                predicate_msg.parameters = self.domain_expert._constructParameters(predicate.signature, params_map)
                 
                 params_match = (len(predicate_msg.parameters) == len(param_names))
                 if not params_match:
@@ -188,7 +188,7 @@ class ProblemExpert():
                 predicate_msg.node_id = i
                 predicate_msg.name = predicate.name
                 params_map = dict([(p.name, fnode.args[j].object().name) for j,p in enumerate(predicate.signature)])
-                predicate_msg.parameters = self.domain_expert.constructParameters(predicate.signature, params_map)
+                predicate_msg.parameters = self.domain_expert._constructParameters(predicate.signature, params_map)
                 predicates.append(predicate_msg)
         return predicates
 
@@ -209,7 +209,7 @@ class ProblemExpert():
                 function_msg.node_id = i
                 function_msg.name = function.name
                 params_map = dict([(p.name, fnode.args[j].object().name) for j,p in enumerate(function.signature)])
-                function_msg.parameters = self.domain_expert.constructParameters(function.signature, params_map)
+                function_msg.parameters = self.domain_expert._constructParameters(function.signature, params_map)
                 function_msg.value = float(self.problem.explicit_initial_values[fnode].constant_value())
 
                 params_match = (len(function_msg.parameters) == len(params_name))
@@ -235,7 +235,7 @@ class ProblemExpert():
                 function_msg.node_id = i
                 function_msg.name = function.name
                 params_map = dict([(p.name, fnode.args[j].object().name) for j,p in enumerate(function.signature)])
-                function_msg.parameters = self.domain_expert.constructParameters(function.signature, params_map)
+                function_msg.parameters = self.domain_expert._constructParameters(function.signature, params_map)
                 function_msg.value = float(self.problem.explicit_initial_values[fnode].constant_value())
                 functions.append(function_msg)
         return functions

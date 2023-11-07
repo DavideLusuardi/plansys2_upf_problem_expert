@@ -28,7 +28,6 @@
 
   ;; The goal is to have both packages delivered to their destinations:
   (:goal
-    ; (and(robot_at leia entrance))
     (and(robot_at leia bathroom))
   )
 )

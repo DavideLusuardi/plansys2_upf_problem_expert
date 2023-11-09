@@ -7,6 +7,7 @@ from unified_planning.io import PDDLReader, PDDLWriter
 from unified_planning.model.operators import OperatorKind
 from unified_planning.exceptions import UPValueError
 from unified_planning.io.pddl_reader import nested_expr, CustomParseResults
+from unified_planning.io.pddl_writer import ConverterToPDDLString
 from unified_planning.io.utils import parse_string, set_results_name
 from unified_planning.engines import ValidationResultStatus
 
@@ -39,14 +40,6 @@ class ProblemExpert():
             msg.Node.ARITH_SUB: '-',
         }
 
-    # this function replaces the previous problem if present
-    def addProblem(self, problem_str: str) -> bool:
-        try:
-            self.problem = PDDLReader().parse_problem_string(self.domain_str, problem_str)
-            return True
-        except:
-            return False
-
     def _constructGoalExp(self, nodes: Dict[int, msg.Node], node_id: int) -> str:
         node = nodes[node_id]
         if node.node_type in [msg.Node.AND, msg.Node.OR, msg.Node.NOT]:
@@ -64,6 +57,42 @@ class ProblemExpert():
             raise Exception('node_type not valid')
 
         return exp
+    
+    def get_knowledge_as_msg(self) -> msg.Knowledge:
+        knowledge = msg.Knowledge()
+        writer = PDDLWriter(self.problem)
+        converter = ConverterToPDDLString(
+            self.problem.environment, writer._get_mangled_name
+        )
+
+        instances = self.problem.all_objects
+        knowledge.instances = [instance.name for instance in instances]
+
+        for f, v in self.problem.initial_values.items():
+            if v.is_true():
+                knowledge.predicates.append(f"{converter.convert(f)}")
+            elif v.is_false():
+                pass
+            else:
+                knowledge.functions.append(f"{converter.convert(f)}")
+
+        goals_str = []
+        for g in self.problem.goals:
+            if g.is_and():
+                goals_str.extend(map(converter.convert, g.args))
+            else:
+                goals_str.append(converter.convert(g))
+        knowledge.goal = f'(and {" ".join(goals_str)})'
+
+        return knowledge
+    
+    # this function replaces the previous problem if present
+    def addProblem(self, problem_str: str) -> bool:
+        try:
+            self.problem = PDDLReader().parse_problem_string(self.domain_str, problem_str)
+            return True
+        except:
+            return False
         
     # this function sobstitutes the goal if present
     def addProblemGoal(self, tree: msg.Tree) -> bool:

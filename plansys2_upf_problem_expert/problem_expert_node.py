@@ -1,4 +1,5 @@
-from plansys2_msgs import srv
+from std_msgs.msg import Empty
+from plansys2_msgs import srv, msg
 from plansys2_upf_problem_expert import ProblemExpert
 from lifecycle_msgs.srv import GetState, ChangeState
 from lifecycle_msgs.msg import Transition, State
@@ -65,6 +66,9 @@ class ProblemExpertNode(Node):
                             self.update_problem_function_service_callback)
         self.create_service(srv.IsProblemGoalSatisfied, 'problem_expert/is_problem_goal_satisfied',
                             self.is_problem_goal_satisfied_service_callback)
+        
+        self.update_pub = self.create_publisher(Empty, "problem_expert/update_notify", 100)
+        self.knowledge_pub = self.create_publisher(msg.Knowledge, "problem_expert/knowledge", 100)
 
     def get_state_service_callback(self, request, response):
         response.current_state = State()
@@ -141,7 +145,13 @@ class ProblemExpertNode(Node):
             response.error_info = "Requesting service in non-active state"
             response.success = False
         else:
+            self.get_logger().info(f"Adding problem:\n{request.problem}")
             response.success = self.problem_expert.addProblem(request.problem)
+            if response.success:
+                self.update_pub.publish(Empty())
+                self.knowledge_pub.publish(self.problem_expert.get_knowledge_as_msg())
+            else:
+                response.error_info = "Problem not valid"
 
         return response
 
@@ -152,7 +162,10 @@ class ProblemExpertNode(Node):
             response.success = False
         else:
             response.success = self.problem_expert.addProblemGoal(request.tree)
-            if not response.success:
+            if response.success:
+                self.update_pub.publish(Empty())
+                self.knowledge_pub.publish(self.problem_expert.get_knowledge_as_msg())
+            else:
                 response.error_info = "Goal not valid"
 
         return response
@@ -164,6 +177,11 @@ class ProblemExpertNode(Node):
             response.success = False
         else:
             response.success = self.problem_expert.addProblemInstance(request.param)
+            if response.success:
+                self.update_pub.publish(Empty())
+                self.knowledge_pub.publish(self.problem_expert.get_knowledge_as_msg())
+            else:
+                response.error_info = "Instance not valid"
 
         return response
 
@@ -174,6 +192,11 @@ class ProblemExpertNode(Node):
             response.success = False
         else:
             response.success = self.problem_expert.addProblemPredicate(request.node)
+            if response.success:
+                self.update_pub.publish(Empty())
+                self.knowledge_pub.publish(self.problem_expert.get_knowledge_as_msg())
+            else:
+                response.error_info = "Predicate not valid"
 
         return response
 
@@ -184,7 +207,12 @@ class ProblemExpertNode(Node):
             response.success = False
         else:
             response.success = self.problem_expert.addProblemFunction(request.node)
-
+            if response.success:
+                self.update_pub.publish(Empty())
+                self.knowledge_pub.publish(self.problem_expert.get_knowledge_as_msg())
+            else:
+                response.error_info = "Function not valid"
+        
         return response
 
     def get_problem_goal_service_callback(self, request, response):
@@ -290,6 +318,12 @@ class ProblemExpertNode(Node):
             response.success = False
         else:
             response.success = self.problem_expert.removeProblemGoal()
+            if response.success:
+                self.update_pub.publish(Empty())
+                self.knowledge_pub.publish(self.problem_expert.get_knowledge_as_msg())
+            else:
+                response.error_info = "Error clearing goal"
+
         return response
 
     def clear_problem_knowledge_service_callback(self, request, response):
@@ -299,6 +333,12 @@ class ProblemExpertNode(Node):
             response.success = False
         else:
             response.success = self.problem_expert.clearProblemKnowledge()
+            if response.success:
+                self.update_pub.publish(Empty())
+                self.knowledge_pub.publish(self.problem_expert.get_knowledge_as_msg())
+            else:
+                response.error_info = "Error clearing knowledge"
+
         return response
 
     def remove_problem_instance_service_callback(self, request, response):
@@ -308,6 +348,12 @@ class ProblemExpertNode(Node):
             response.success = False
         else:
             response.success = self.problem_expert.removeProblemInstance(request.param)
+            if response.success:
+                self.update_pub.publish(Empty())
+                self.knowledge_pub.publish(self.problem_expert.get_knowledge_as_msg())
+            else:
+                response.error_info = "Error removing instance"
+
         return response
 
     def remove_problem_predicate_service_callback(self, request, response):
@@ -317,6 +363,12 @@ class ProblemExpertNode(Node):
             response.success = False
         else:
             response.success = self.problem_expert.removeProblemPredicate(request.node)
+            if response.success:
+                self.update_pub.publish(Empty())
+                self.knowledge_pub.publish(self.problem_expert.get_knowledge_as_msg())
+            else:
+                response.error_info = "Error removing predicate"
+
         return response
 
     def remove_problem_function_service_callback(self, request, response):
@@ -326,6 +378,12 @@ class ProblemExpertNode(Node):
             response.success = False
         else:
             response.success = self.problem_expert.removeProblemFunction(request.node)
+            if response.success:
+                self.update_pub.publish(Empty())
+                self.knowledge_pub.publish(self.problem_expert.get_knowledge_as_msg())
+            else:
+                response.error_info = "Error removing function"
+
         return response
 
     def exist_problem_predicate_service_callback(self, request, response):
@@ -353,6 +411,12 @@ class ProblemExpertNode(Node):
             response.success = False
         else:
             response.success = self.problem_expert.updateProblemFunction(request.node)
+            if response.success:
+                self.update_pub.publish(Empty())
+                self.knowledge_pub.publish(self.problem_expert.get_knowledge_as_msg())
+            else:
+                response.error_info = "Function not valid"
+
         return response
 
     def is_problem_goal_satisfied_service_callback(self, request, response):
